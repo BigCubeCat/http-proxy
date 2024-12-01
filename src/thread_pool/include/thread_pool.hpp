@@ -36,4 +36,6 @@ public:
     void run(const std::function<void *(void *)> &start_routine);
 
     void add_task(void *arg);
+
+    ~thread_pool_t();
 };

@@ -1,6 +1,7 @@
 #include "thread_pool.hpp"
 
 #include <cstddef>
+#include <exception>
 #include <thread>
 
 #include <spdlog/spdlog.h>
@@ -36,3 +37,5 @@ void thread_pool_t::add_task(void *arg) {
     m_tasks[m_next_thread]->add_task(arg);
     m_next_thread = (m_next_thread + 1) % m_count_pools;
 }
+
+thread_pool_t::~thread_pool_t() = default;

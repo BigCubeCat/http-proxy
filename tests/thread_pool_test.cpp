@@ -96,9 +96,10 @@ TEST(ThreadPool, Basic) {
         pool.add_task(args[k].get());
         pool.add_task(args[k].get());
         k += 2;
+        usleep(100);
     }
     spdlog::trace("waiting");
-    usleep(1000);
+    usleep(2000);
     auto res1 = dynamic_cast<test_worker *>(workers[0].get())->m_res;
     auto res2 = dynamic_cast<test_worker *>(workers[0].get())->m_res;
     spdlog::trace("got results");
