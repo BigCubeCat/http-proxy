@@ -50,7 +50,7 @@ public:
         return nullptr;
     }
     void start() override {
-        spdlog::debug("start()");
+        spdlog::debug("start({})", gettid());
         while (m_current < m_total_tasks) {
             if (m_value == -1) {
                 usleep(100);
