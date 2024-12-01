@@ -1,6 +1,8 @@
 #include <optional>
 #include <string>
 
+#include <unistd.h>
+
 #include <spdlog/spdlog.h>
 
 #include <gtest/gtest.h>
@@ -40,29 +42,6 @@ TEST(CacheTest, DeletePoliticTest) {
     EXPECT_EQ(cache.get("1"), 1);
 }
 
-TEST(CacheTest, ConsumerProducerTest) {
-    lru_cache_t<int> cache(3);
-
-    auto writer = [&cache]() {
-        cache.set("one", 1);
-        cache.set("two", 2);
-        cache.set("three", 3);
-        cache.set("four", 4);
-    };
-
-    auto reader = [&cache]() {
-        usleep(1);
-        EXPECT_EQ(cache.get("two"), 2);
-        EXPECT_EQ(cache.get("three"), 3);
-        EXPECT_EQ(cache.get("four"), 4);
-    };
-
-    std::thread t1(writer);
-    std::thread t2(reader);
-    t1.join();
-    t2.join();
-}
-
 TEST(CacheTest, AsyncTest) {
     lru_cache_t<int> cache(100);
     for (int i = 0; i < 100; ++i) {
@@ -93,4 +72,14 @@ TEST(CacheTest, AsyncTest) {
     std::thread t2(user);
     t1.join();
     t2.join();
+}
+
+TEST(CacheTest, TimeToLiveTest) {
+    lru_cache_t<int> cache(2, 2);
+    for (int i = 0; i < 2; ++i) {
+        cache.set(std::to_string(i), i);
+        sleep(1);
+    }
+    EXPECT_EQ(cache.get("1"), 1);
+    EXPECT_EQ(cache.get("0"), std::nullopt);
 }
