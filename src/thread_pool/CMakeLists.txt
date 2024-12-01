@@ -24,6 +24,4 @@ target_include_directories(${PROJECT_NAME}
 include_directories(${CMAKE_SOURCE_DIR}/src/thread_pool/include)
 
 find_package(spdlog REQUIRED)
-find_package(exceptions_lib) 
-find_package(task_lib)
 target_link_libraries(${PROJECT_NAME} PUBLIC exceptions_lib task_lib PRIVATE spdlog::spdlog)
