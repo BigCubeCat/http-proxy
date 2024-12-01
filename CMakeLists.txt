@@ -6,9 +6,6 @@ set(EXECUTABLE_NAME http_proxy)
 project(${EXECUTABLE_NAME})
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_FLAGS_RELEASE "-Ofast")
-set(CMAKE_CXX_FLAGS "-g -O3 -Wall -fprofile-arcs -ftest-coverage")
-set(CMAKE_C_FLAGS "-g -O3 -Wall -W -fprofile-arcs -ftest-coverage")
-set(CMAKE_EXE_LINKER_FLAGS "-fprofile-arcs -ftest-coverage")
 
 
 add_subdirectory(src/proxy)

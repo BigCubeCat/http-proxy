@@ -16,4 +16,16 @@ struct proxy_config_t {
      * описания
      */
     bool help = false;
+    /*!
+     * время жизни кэш записи. По умолчанию 5с
+     */
+    long ttl = 5;
+    /*!
+     * Максимальный размер кэша
+     */
+    size_t cache_size = 10000;
 };
+
+proxy_config_t load_config(int argc, char **argv);
+
+void debug(const proxy_config_t &conf);
