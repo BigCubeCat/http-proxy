@@ -5,6 +5,7 @@
 #include <ctime>
 #include <list>
 #include <optional>
+#include <shared_mutex>
 #include <string>
 #include <unordered_map>
 #include <utility>
@@ -12,6 +13,11 @@
 #include <spdlog/spdlog.h>
 
 #include "utils.hpp"
+
+template <typename T>
+using cache_map   = std::unordered_map<std::string, std::pair<T, std::time_t>>;
+using shared_lock = std::shared_lock<std::shared_mutex>;
+using unique_lock = std::unique_lock<std::shared_mutex>;
 
 
 /*!
@@ -21,12 +27,15 @@ template <typename T>
 class lru_cache_t {
 private:
     size_t m_size;
-    std::unordered_map<std::string, std::pair<T, std::time_t>> m_hash_map;
+    cache_map<T> m_hash_map;
     std::list<std::string> m_usage_list;
+    mutable std::shared_mutex m_lock;    // в отличе от std::mutex можно читать
+                                         // сразу нескольким. mutable чтобы
+                                         // можно было изменять даже из
+                                         // константных методов
 
-    void touch(
-        std::unordered_map<std::string, std::pair<T, std::time_t>>::iterator it
-    ) {
+
+    void touch(cache_map<T>::iterator it) {
         m_usage_list.remove(it->first);
         it->second.second = current_unixtime();
         m_usage_list.emplace_front(it->first);
@@ -46,11 +55,16 @@ public:
      * std::nullopt
      */
     std::optional<T> get(const std::string &key) {
+        spdlog::debug("tring to get {}", key);
+        shared_lock lock(m_lock);
         auto it = m_hash_map.find(key);
         if (it == m_hash_map.end()) {
             return std::nullopt;
         }
+        lock.unlock();
+        unique_lock ulock(m_lock);
         touch(it);
+        ulock.unlock();
         return it->second.first;
     }
 
@@ -61,6 +75,8 @@ public:
      * добавляет новую запись.
      */
     void set(const std::string &key, T element) {
+        spdlog::debug("tring to set {}", key);
+        unique_lock lock(m_lock);
         auto it = m_hash_map.find(key);
         if (it != m_hash_map.end()) {
             // если сущетвует - обновить использование
@@ -74,6 +90,6 @@ public:
             m_usage_list.emplace_front(key);
         }
         m_hash_map[key] = { element, current_unixtime() };
-        spdlog::debug("{} {}", m_hash_map[key].first, m_hash_map[key].second);
+        lock.unlock();
     }
 };
