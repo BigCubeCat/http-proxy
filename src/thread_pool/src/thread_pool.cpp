@@ -8,12 +8,12 @@
 
 #include "exceptions.hpp"
 
-#include "pool/init.hpp"
+#include "pool/thread_pool_exception.hpp"
 
 thread_pool_t::thread_pool_t(
     const std::vector<std::shared_ptr<worker_iface>> &tasks
 )
-    : m_tasks(tasks), m_count_pools(tasks.size()) {
+    : m_count_pools(tasks.size()), m_tasks(tasks) {
     m_threads.resize(m_count_pools);
     spdlog::debug("build thread_pool_t with {} pools", m_count_pools);
 }
