@@ -1,8 +1,7 @@
 #pragma once
 
 /*!
- * task_iface
- * Интерфейс задачи, запускаемой в thread_pool
+ * \brief Интерфейс задачи, запускаемой в thread_pool
  * например для прокси start_routine будет конструировать прокси, а add_task
  * додавлять соединение
  */
@@ -15,5 +14,9 @@ public:
     /*!
      * \brief добавление подзадачи
      */
-    virtual void add_task(void *arg) = 0;
+    virtual void add_task(int fd) = 0;
+    /*!
+     * \brief Добавление аргумента существующему воркеру
+     */
+    virtual void toggle_task(int fd) = 0;
 };

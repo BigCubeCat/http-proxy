@@ -17,6 +17,7 @@
 
 
 const int total_tasks = 5;
+
 /*!
  * Имплиментация интерфейса для unit-тестирования
  */
@@ -64,14 +65,15 @@ public:
             m_mutex.unlock();
         }
     }
-    void add_task(void *arg) override {
+    void add_task(int fd) override {
         while (m_value != -1) {
             usleep(100);
         }
         m_mutex.lock();
-        m_value = *static_cast<int *>(arg);
+        m_value = fd;
         m_mutex.unlock();
     }
+    void toggle_task(int fd) override { }
 };
 
 TEST(ThreadPool, Basic) {
@@ -86,15 +88,14 @@ TEST(ThreadPool, Basic) {
     auto pool = thread_pool_t(workers);
     spdlog::warn("{}", workers[0].get() == nullptr);
     pool.run(test_worker::start_routine);
-    std::vector<std::shared_ptr<int>> args(static_cast<size_t>(total_tasks * n)
-    );
+    std::vector<int> args(static_cast<size_t>(total_tasks * n));
     int k = 0;
     for (int i = 2; i < total_tasks + 2; ++i) {
         spdlog::debug("add_task({})", i);
-        args[k]     = std::make_shared<int>(i);
-        args[k + 1] = std::make_shared<int>(i);
-        pool.add_task(args[k].get());
-        pool.add_task(args[k].get());
+        args[k]     = i;
+        args[k + 1] = i;
+        pool.add_task(args[k]);
+        pool.add_task(args[k]);
         k += 2;
         usleep(100);
     }

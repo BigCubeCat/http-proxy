@@ -1,12 +1,9 @@
 #include "thread_pool.hpp"
 
 #include <cstddef>
-#include <exception>
 #include <thread>
 
 #include <spdlog/spdlog.h>
-
-#include "exceptions.hpp"
 
 #include "pool/thread_pool_exception.hpp"
 
@@ -30,12 +27,22 @@ void thread_pool_t::run(const std::function<void *(void *)> &start_routine) {
     }
 }
 
-void thread_pool_t::add_task(void *arg) {
+void thread_pool_t::add_task(int fd) {
     if (m_tasks[m_next_thread] == nullptr) {
         throw thread_pool_exception("worker is null");
     }
-    m_tasks[m_next_thread]->add_task(arg);
+    m_tasks[m_next_thread]->add_task(fd);
     m_next_thread = (m_next_thread + 1) % m_count_pools;
+}
+
+void thread_pool_t::toggle_task(int fd) {
+    auto thread_index_val = m_fd_map.find(fd);
+    if (thread_index_val == m_fd_map.end()) {
+        spdlog::error("unknown fd={}", fd);
+        return;
+    }
+    auto thread_id = thread_index_val->second;
+    m_tasks[thread_id]->toggle_task(fd);
 }
 
 thread_pool_t::~thread_pool_t() = default;

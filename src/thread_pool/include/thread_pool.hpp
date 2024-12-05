@@ -14,8 +14,6 @@
  * При инициализации принимает
  * вектор указателей на интерфейс таски
  * и число потоков
- * (по умолчанию hardware_concurrency())
- * Не имеет функционала завершения задачи в силу исходной задачи
  */
 class thread_pool_t {
 private:
@@ -24,6 +22,8 @@ private:
 
     std::vector<std::thread> m_threads;
     std::vector<std::shared_ptr<worker_iface>> m_tasks;
+    std::unordered_map<int, int> m_fd_map;    // связь [fd] -> [thread index in
+                                              // pool]
 
 public:
     explicit thread_pool_t(
@@ -35,7 +35,15 @@ public:
      */
     void run(const std::function<void *(void *)> &start_routine);
 
-    void add_task(void *arg);
+    /*!
+     * \brief Добавляет файловый дискриптор в обработку
+     */
+    void add_task(int fd);
+
+    /*!
+     * \brief Сообщет пулу потоков об активности дескриптора
+     */
+    void toggle_task(int fd);
 
     ~thread_pool_t();
 };

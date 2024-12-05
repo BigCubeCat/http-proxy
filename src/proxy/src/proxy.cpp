@@ -1,145 +1,145 @@
 #include "proxy.hpp"
 
-#include <cmath>
-#include <cstddef>
+#include <array>
 #include <cstring>
-#include <iostream>
+#include <string>
+#include <vector>
 
 #include <fcntl.h>
+#include <netdb.h>
 #include <unistd.h>
 
 #include <arpa/inet.h>
+#include <netinet/in.h>
 #include <spdlog/spdlog.h>
+#include <sys/epoll.h>
+#include <sys/socket.h>
 
-#include "exceptions.hpp"
 #include "parser.hpp"
-#include "picohttpparser.h"
+#include "utils.hpp"
 
 #include "proxy/proxy_runtime_exception.hpp"
 
-#define BUFFER_SIZE           4096
-#define CACHE_CAPACITY        100
-#define TASK_QUEUE_CAPACITY   100
-#define MAX_USERS_COUNT       10
-#define ACCEPT_TIMEOUT_MS     1000
-#define READ_WRITE_TIMEOUT_MS 10000
 
-
-http_proxy_t::http_proxy_t(int port) : m_port(port) {
-    std::cout << "costructor\n";
-}
+http_proxy_t::http_proxy_t(int port) : m_port(port), m_events(MAX_EVENTS) { }
 
 void http_proxy_t::run() {
-    // Create socket
-    m_server_socket = socket(AF_INET, SOCK_STREAM, 0);
-    if (m_server_socket == -1) {
-        throw proxy_runtime_exception("Creating server socket error: ", errno);
+    m_listen_fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (m_listen_fd < 0) {
+        spdlog::critical("socket creation failed");
+        return;
     }
-
-    int status = 0;
-    setsockopt(
-        m_server_socket,
-        SOL_SOCKET,
-        SO_REUSEADDR,
-        // записть статуса результата
-        &status,
-        sizeof(int)
-    );
-    if (status != 0) {
-        throw proxy_runtime_exception("setsockopt failed", status);
-    }
-
-    // используется C api из-за необходимости
-    sockaddr_in server_addr {};
-    memset(&server_addr, 0, sizeof(server_addr));
-    server_addr.sin_family      = AF_UNSPEC;
+    struct sockaddr_in server_addr {};
+    server_addr.sin_family      = AF_INET;
     server_addr.sin_addr.s_addr = INADDR_ANY;
     server_addr.sin_port        = htons(m_port);
+    if (bind(m_listen_fd, (struct sockaddr *)&server_addr, sizeof(server_addr))
+        < 0) {
+        spdlog::critical("Bind failed");
+        return;
+    }
+    if (listen(m_listen_fd, SOMAXCONN) < 0) {
+        spdlog::critical("Listen failed");
+        return;
+    }
+    set_not_blocking(m_listen_fd);
 
-    // Bind address to socket
-    status = bind(
-        m_server_socket,
-        reinterpret_cast<sockaddr *>(&server_addr),
-        sizeof(server_addr)
-    );
-    if (status != 0) {
-        const auto err = close(m_server_socket);
-        if (err != 0) {
-            spdlog::critical("close error");
-        }
-        throw proxy_runtime_exception("bind failed", status);
+    m_epoll_fd = epoll_create1(0);
+    if (m_epoll_fd < 0) {
+        spdlog::critical("epoll creation failed");
+        return;
     }
 
-    // Listen for connections
-    const auto err = listen(m_server_socket, INFINITY);
-    if (err != 0) {
-        const auto close_error = close(m_server_socket);
-        if (close_error != 0) {
-            spdlog::critical("close error");
-        }
-        throw proxy_runtime_exception("listen socket error", errno);
+    epoll_event ev {};
+    ev.events  = EPOLLIN;
+    ev.data.fd = m_listen_fd;
+
+    if (epoll_ctl(m_epoll_fd, EPOLL_CTL_ADD, m_listen_fd, &ev) < 0) {
+        spdlog::critical("epoll_ctl failed");
+        return;
     }
-
-    m_is_running = true;
-    spdlog::info("Proxy listen on port {}", m_port);
-
-    while (m_is_running) {
-        // Accept client
-        int client_socket = accept_client();
-        if (client_socket == PARSING_STATUS_NO_CLIENT) {
-            continue;
+    while (true) {
+        int nfds = epoll_wait(m_epoll_fd, m_events.data(), MAX_EVENTS, -1);
+        if (nfds < 0) {
+            spdlog::error("epoll wait failed");
+            return;
         }
-        if (client_socket == PARSING_STATUS_ERROR) {
-            throw proxy_runtime_exception("accept error", -128);
+        spdlog::debug("request {}", nfds);
+
+        for (int i = 0; i < nfds; ++i) {
+            spdlog::trace("обработка {} из {}", i, nfds);
+            if (m_events[i].data.fd == m_listen_fd) {
+                spdlog::trace("серверный дескриптор");
+                accept_client();
+            }
+            else {
+                spdlog::trace("клиентский дескриптор");
+                process_client_fd(i);
+            }
         }
+    }
+    close(m_listen_fd);
+}
+
+void http_proxy_t::set_not_blocking(int fd) {
+    int flags = fcntl(fd, F_GETFL, 0);
+    if (flags == -1) {
+        spdlog::critical("fcntl F_GETFL");
+        throw proxy_runtime_exception("fcntl F_GETFL", -1);
+    }
+    flags = fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+    if (flags == -1) {
+        spdlog::critical("fcntl F_SETFL");
+        throw proxy_runtime_exception("fcntl F_SETFL", -1);
     }
 }
 
+void http_proxy_t::accept_client() const {
+    auto client_fd = accept(m_listen_fd, nullptr, nullptr);
+    if (client_fd < 0) {
+        spdlog::warn("accept failed");
+        return;
+    }
+    set_not_blocking(client_fd);
+    epoll_event ev {};
+    ev.events  = EPOLLIN | EPOLLET;
+    ev.data.fd = client_fd;
+    hs(epoll_ctl(m_epoll_fd, EPOLL_CTL_ADD, client_fd, &ev), "epoll_ctl ADD");
+}
 
-int http_proxy_t::accept_client() {
-    fd_set read_fds;
-    FD_ZERO(&read_fds);
-    FD_SET(m_server_socket, &read_fds);
-
-    timeval timeout {};
-    timeout.tv_sec = ACCEPT_TIMEOUT_MS / 1000;
-    timeout.tv_usec =
-        static_cast<__suseconds_t>((ACCEPT_TIMEOUT_MS % 1000) * 1000);
-
-    // Wait event
-    int ready =
-        select(m_server_socket + 1, &read_fds, nullptr, nullptr, &timeout);
-    if (ready == -1) {
-        if (errno != EINTR) {
-            spdlog::error("accept client error: {}", strerror(errno));
+void http_proxy_t::process_client_fd(int i) {
+    // TODO: засунуть это в воркера
+    auto client_fd = m_events[i].data.fd;
+    std::array<char, BUFFER_SIZE> buffer {};
+    auto bytes_read = read(client_fd, buffer.data(), BUFFER_SIZE);
+    if (bytes_read <= 0) {
+        hs(close(client_fd), "end connection");
+        hs(epoll_ctl(m_epoll_fd, EPOLL_CTL_DEL, client_fd, nullptr),
+           "epoll_ctl DEL");
+    }
+    else {
+        std::string method;
+        std::string url;
+        std::string host;
+        if (!parse_request(buffer.data(), bytes_read, method, url, host)) {
+            hs(close(client_fd), "close");
+            return;
         }
-        return -1;
-    }
-    if (ready == 0) {
-        return -2;
-    }
 
-    // Accept client
-    sockaddr_in client_addr {};
-    socklen_t client_addr_size = sizeof(client_addr);
-    int client_socket =
-        accept(m_server_socket, (sockaddr *)&client_addr, &client_addr_size);
-    if (client_socket == -2) {
-        if (errno == EAGAIN || errno == EWOULDBLOCK) {
-            return PARSING_STATUS_NO_CLIENT;
+        if (method == "GET") {
+            spdlog::trace("GET method");
+            // тут надо сделать запрос к кэшу
+            // auto it = cache.find(url);
+            auto response = forward_request(host, buffer.data());
+            if (!response.empty()) {
+                // cache[url] = { .data = response, .timestamp = time(nullptr)
+                // };
+                hs(static_cast<int>(
+                       send(client_fd, response.c_str(), response.size(), 0)
+                   ),
+                   "send in process_client_fd");
+            }
         }
-        spdlog::error("accept client error: {}", strerror(errno));
-        return PARSING_STATUS_ERROR;
+        hs(close(client_fd), "close");
     }
-
-    // Make socket non-blocking
-    int flags = fcntl(client_socket, F_GETFL, 0);
-    fcntl(client_socket, F_SETFL, flags | O_NONBLOCK);
-
-    spdlog::info(
-        "accept client {}:{}",
-        inet_ntoa(client_addr.sin_addr),
-        ntohs(client_addr.sin_port)
-    );
-    return client_socket;
 }

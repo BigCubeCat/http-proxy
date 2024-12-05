@@ -2,8 +2,8 @@
 
 #include <spdlog/spdlog-inl.h>
 
-#include "client.hpp"
 #include "config.hpp"
+#include "proxy.hpp"
 
 const std::string USAGE_MESSAGE =
     "\t--help - вывод сообщения о том как запускать прокси, возможных флагах и "
@@ -16,14 +16,15 @@ const std::string USAGE_MESSAGE =
     "\t--cache-size - максимальный размер кэша\n";
 
 int main(int argc, char *argv[]) {
-    spdlog::set_level(spdlog::level::debug);
-    // http_proxy_t proxy;
+    spdlog::set_level(spdlog::level::trace);
+    http_proxy_t proxy(8080);
     std::cout << "hello world!" << "\n";
     auto conf = load_config(argc, argv);
     if (conf.help) {
         std::cout << USAGE_MESSAGE;
     }
-    runProxyServer(8080);
+
+    proxy.run();
 
     return 0;
 }
