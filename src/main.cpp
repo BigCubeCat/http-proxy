@@ -2,9 +2,8 @@
 
 #include <spdlog/spdlog-inl.h>
 
+#include "client.hpp"
 #include "config.hpp"
-
-#include "proxy/include/proxy.hpp"
 
 const std::string USAGE_MESSAGE =
     "\t--help - вывод сообщения о том как запускать прокси, возможных флагах и "
@@ -18,11 +17,13 @@ const std::string USAGE_MESSAGE =
 
 int main(int argc, char *argv[]) {
     spdlog::set_level(spdlog::level::debug);
-    http_proxy_t proxy;
+    // http_proxy_t proxy;
     std::cout << "hello world!" << "\n";
     auto conf = load_config(argc, argv);
     if (conf.help) {
         std::cout << USAGE_MESSAGE;
     }
+    runProxyServer(8080);
+
     return 0;
 }

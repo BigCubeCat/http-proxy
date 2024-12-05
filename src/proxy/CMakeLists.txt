@@ -1,5 +1,3 @@
-cmake_minimum_required(VERSION 3.28)
-
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(PROJECT_NAME proxy_lib)
 project(${PROJECT_NAME})
