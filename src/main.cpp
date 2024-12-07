@@ -1,7 +1,9 @@
 #include <iostream>
+#include <memory>
 
 #include <spdlog/spdlog-inl.h>
 
+#include "cache.hpp"
 #include "config.hpp"
 #include "proxy.hpp"
 
@@ -17,12 +19,18 @@ const std::string USAGE_MESSAGE =
 
 int main(int argc, char *argv[]) {
     spdlog::set_level(spdlog::level::trace);
-    http_proxy_t proxy(8080);
     std::cout << "hello world!" << "\n";
     auto conf = load_config(argc, argv);
     if (conf.help) {
         std::cout << USAGE_MESSAGE;
+        return 0;
     }
+    auto cache =
+        std::make_shared<lru_cache_t<std::string>>(conf.cache_size, conf.ttl);
+
+    http_proxy_t proxy(
+        cache.get(), conf.proxy_port, static_cast<int>(conf.max_client_threads)
+    );
 
     proxy.run();
 

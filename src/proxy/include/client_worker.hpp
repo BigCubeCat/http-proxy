@@ -1,6 +1,11 @@
 #pragma once
 
+#include <condition_variable>
+#include <mutex>
 #include <queue>
+#include <vector>
+
+#include <sys/epoll.h>
 
 #include "task.hpp"
 
@@ -9,10 +14,21 @@
  */
 class client_worker : public worker_iface {
 private:
-    std::queue<int> m_fd;
+    /// Файловый дискриптор, из proxy
+    int m_epoll_fd = -1;
+    std::vector<epoll_event> m_events;
+    std::queue<int> m_fds;
+    std::mutex m_lock;
+
+    std::condition_variable m_toggled_cond;
+    std::mutex m_toggle_lock;
 
 public:
-    explicit client_worker(std::queue<int> m_fd) : m_fd(std::move(m_fd)) { }
+    explicit client_worker(const std::vector<epoll_event> &events, int epoll_fd)
+        : m_epoll_fd(epoll_fd), m_events(events) { }
+
+    void process_client_fd(int client_fd) const;
+
     void start() override;
 
     /*!

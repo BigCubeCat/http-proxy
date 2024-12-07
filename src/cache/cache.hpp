@@ -1,7 +1,5 @@
 #pragma once
 
-
-#include <chrono>
 #include <cstddef>
 #include <ctime>
 #include <list>
@@ -14,14 +12,14 @@
 #include <spdlog/spdlog.h>
 
 #include "timing.hpp"
-#include "utils.hpp"
 
 template <typename T>
 using cache_map   = std::unordered_map<std::string, std::pair<T, timing>>;
 using shared_lock = std::shared_lock<std::shared_mutex>;
 using unique_lock = std::unique_lock<std::shared_mutex>;
 
-// TODO: Time To Live
+#define current_unixtime                                                       \
+    std::chrono::system_clock::to_time_t(std::chrono::system_clock::now())
 
 /*!
  * Реализация LRU-кэша со строковым ключом
@@ -29,8 +27,8 @@ using unique_lock = std::unique_lock<std::shared_mutex>;
 template <typename T>
 class lru_cache_t {
 private:
-    long m_ttl;
-    size_t m_size;
+    long m_ttl    = 5;
+    size_t m_size = 1024;
     cache_map<T> m_hash_map;
     std::list<std::string> m_usage_list;
     mutable std::shared_mutex m_lock;    // в отличе от std::mutex можно читать
@@ -40,7 +38,7 @@ private:
 
     void touch(cache_map<T>::iterator it) {
         m_usage_list.remove(it->first);
-        it->second.second.used = current_unixtime();
+        it->second.second.used = current_unixtime;
         m_usage_list.emplace_front(it->first);
     }
 
@@ -51,7 +49,7 @@ private:
     }
 
     bool is_expired(std::time_t creation_time) const {
-        return static_cast<long>(current_unixtime() - creation_time) >= m_ttl;
+        return static_cast<long>(current_unixtime - creation_time) >= m_ttl;
     }
 
 public:
@@ -70,7 +68,7 @@ public:
             return std::nullopt;
         }
         spdlog::debug(
-            "check expired {} {}", it->second.second.created, current_unixtime()
+            "check expired {} {}", it->second.second.created, current_unixtime
         );
         if (is_expired(it->second.second.created)) {
             return std::nullopt;
@@ -94,6 +92,7 @@ public:
         auto it = m_hash_map.find(key);
         if (it != m_hash_map.end()) {
             // если сущетвует - обновить использование
+            // ЭТО НЕВЕРНО, НАДО ОБНОВИТЬ element
             touch(it);
         }
         else {
@@ -104,7 +103,7 @@ public:
             m_usage_list.emplace_front(key);
         }
         m_hash_map[key] = {
-            element, { current_unixtime(), current_unixtime() }
+            element, { current_unixtime, current_unixtime }
         };
         lock.unlock();
     }

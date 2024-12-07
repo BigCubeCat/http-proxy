@@ -2,6 +2,7 @@
 
 #include <array>
 #include <cstring>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -15,13 +16,20 @@
 #include <sys/epoll.h>
 #include <sys/socket.h>
 
+#include "const.hpp"
 #include "parser.hpp"
 #include "utils.hpp"
 
 #include "proxy/proxy_runtime_exception.hpp"
 
-
-http_proxy_t::http_proxy_t(int port) : m_port(port), m_events(MAX_EVENTS) { }
+http_proxy_t::http_proxy_t(
+    lru_cache_t<std::string> *cache, int port, int count_threads
+)
+    : m_port(port),
+      m_events(MAX_EVENTS),
+      m_count_workers(count_threads),
+      m_workers(count_threads),
+      m_cache(cache) { }
 
 void http_proxy_t::run() {
     m_listen_fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -58,6 +66,9 @@ void http_proxy_t::run() {
         spdlog::critical("epoll_ctl failed");
         return;
     }
+
+    m_workers.reserve(m_count_workers);
+    m_workers.push_back(std::make_shared<client_worker>(m_events, m_epoll_fd));
     while (true) {
         int nfds = epoll_wait(m_epoll_fd, m_events.data(), MAX_EVENTS, -1);
         if (nfds < 0) {
@@ -74,7 +85,7 @@ void http_proxy_t::run() {
             }
             else {
                 spdlog::trace("клиентский дескриптор");
-                process_client_fd(i);
+                m_workers[0]->process_client_fd(m_events[i].data.fd);
             }
         }
     }
@@ -105,41 +116,4 @@ void http_proxy_t::accept_client() const {
     ev.events  = EPOLLIN | EPOLLET;
     ev.data.fd = client_fd;
     hs(epoll_ctl(m_epoll_fd, EPOLL_CTL_ADD, client_fd, &ev), "epoll_ctl ADD");
-}
-
-void http_proxy_t::process_client_fd(int i) {
-    // TODO: засунуть это в воркера
-    auto client_fd = m_events[i].data.fd;
-    std::array<char, BUFFER_SIZE> buffer {};
-    auto bytes_read = read(client_fd, buffer.data(), BUFFER_SIZE);
-    if (bytes_read <= 0) {
-        hs(close(client_fd), "end connection");
-        hs(epoll_ctl(m_epoll_fd, EPOLL_CTL_DEL, client_fd, nullptr),
-           "epoll_ctl DEL");
-    }
-    else {
-        std::string method;
-        std::string url;
-        std::string host;
-        if (!parse_request(buffer.data(), bytes_read, method, url, host)) {
-            hs(close(client_fd), "close");
-            return;
-        }
-
-        if (method == "GET") {
-            spdlog::trace("GET method");
-            // тут надо сделать запрос к кэшу
-            // auto it = cache.find(url);
-            auto response = forward_request(host, buffer.data());
-            if (!response.empty()) {
-                // cache[url] = { .data = response, .timestamp = time(nullptr)
-                // };
-                hs(static_cast<int>(
-                       send(client_fd, response.c_str(), response.size(), 0)
-                   ),
-                   "send in process_client_fd");
-            }
-        }
-        hs(close(client_fd), "close");
-    }
 }

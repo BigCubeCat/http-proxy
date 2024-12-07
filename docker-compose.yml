@@ -10,17 +10,13 @@ services:
       - "8080:8080"
 
   client1:
-    build:
-      context: .
-      dockerfile: client.Dockerfile
+    build: tests
     container_name: client1
     depends_on:
       - proxy
 
   client2:
-    build:
-      context: .
-      dockerfile: client.Dockerfile
+    build: tests
     container_name: client2
     depends_on:
       - proxy

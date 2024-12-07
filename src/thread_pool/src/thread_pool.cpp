@@ -35,6 +35,7 @@ void thread_pool_t::add_task(int fd) {
     m_next_thread = (m_next_thread + 1) % m_count_pools;
 }
 
+// TODO: RENAME notify
 void thread_pool_t::toggle_task(int fd) {
     auto thread_index_val = m_fd_map.find(fd);
     if (thread_index_val == m_fd_map.end()) {

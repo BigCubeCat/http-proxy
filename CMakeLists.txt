@@ -14,7 +14,6 @@ add_subdirectory(src/thread_pool)
 add_subdirectory(src/task)
 add_subdirectory(src/exceptions)
 add_subdirectory(src/cache)
-add_subdirectory(src/selector)
 
 add_executable(${EXECUTABLE_NAME} src/main.cpp)
 
@@ -26,13 +25,14 @@ endif ()
 
 link_directories(${CMAKE_BINARY_DIR}/lib/picohttpparser)
 
+find_package(spdlog REQUIRED)
 target_link_libraries(${EXECUTABLE_NAME} PUBLIC
 picohttpparser
-selector_lib
 cache_lib
 exceptions_lib
 task_lib 
 proxy_lib
 thread_pool_lib
+spdlog::spdlog
 )
 

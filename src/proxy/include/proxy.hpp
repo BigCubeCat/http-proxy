@@ -3,12 +3,13 @@
 
 #include <sys/epoll.h>
 
-#include "const.hpp"
+#include "cache.hpp"
+#include "client_worker.hpp"
+
 
 /*!
  * Объект прокси
  */
-
 class http_proxy_t {
 private:
     int m_epoll_fd      = -1;
@@ -19,6 +20,11 @@ private:
 
     std::vector<epoll_event> m_events;
 
+    int m_count_workers;
+    std::vector<std::shared_ptr<client_worker>> m_workers;
+
+    lru_cache_t<std::string> *m_cache;
+
     /*!
      * Переключает файловый дискриптор в неблокирующий режим
      * \param[in] fd файловый дескриптор
@@ -27,10 +33,10 @@ private:
 
     void accept_client() const;
 
-    void process_client_fd(int i);
-
 public:
-    explicit http_proxy_t(int port);
+    explicit http_proxy_t(
+        lru_cache_t<std::string> *cache, int port, int count_threads
+    );
 
     void run();
 };

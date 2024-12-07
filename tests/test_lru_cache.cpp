@@ -12,7 +12,7 @@
 
 TEST(CacheTest, UsageTest) {
     // spdlog::set_level(spdlog::level::trace);
-    lru_cache_t<int> cache(5);
+    lru_cache_t<int> cache(5, 100);
     for (int i = 0; i < 5; ++i) {
         cache.set(std::to_string(i), i);
     }
