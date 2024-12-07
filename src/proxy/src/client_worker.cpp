@@ -57,12 +57,16 @@ void client_worker::process_client_fd(int client_fd) const {
 
         if (method == "GET") {
             spdlog::trace("GET method");
-            // тут надо сделать запрос к кэшу
-            // auto it = cache.find(url);
-            auto response = forward_request(host, buffer.data());
+            std::string response;
+            auto value = m_cache->get(url);
+            if (value == std::nullopt) {
+                response = forward_request(host, buffer.data());
+                m_cache->set(url, response);
+            }
+            else {
+                response = value.value();
+            }
             if (!response.empty()) {
-                // cache[url] = { .data = response, .timestamp = time(nullptr)
-                // };
                 hs(static_cast<int>(
                        send(client_fd, response.c_str(), response.size(), 0)
                    ),

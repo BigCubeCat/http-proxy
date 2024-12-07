@@ -72,7 +72,7 @@ void http_proxy_t::run() {
     m_workers.resize(m_count_workers);
     for (int i = 0; i < m_count_workers; ++i) {
         m_workers[i] = std::shared_ptr<worker_iface>(
-            std::make_shared<client_worker>(m_events, m_epoll_fd)
+            std::make_shared<client_worker>(m_cache, m_events, m_epoll_fd)
         );
     }
     m_pool = std::make_shared<thread_pool_t>(m_workers);
