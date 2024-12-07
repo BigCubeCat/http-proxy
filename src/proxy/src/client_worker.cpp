@@ -9,27 +9,30 @@
 #include "parser.hpp"
 #include "utils.hpp"
 
-void client_worker::add_task(int fd) {
-    m_lock.lock();
-    m_fds.push(fd);
-    m_lock.unlock();
+
+void *start_client_worker_routine(void *arg) {
+    auto *worker = static_cast<client_worker *>(arg);
+    if (worker == nullptr) {
+        spdlog::critical("cannot start routine, arg is nullptr");
+        throw std::runtime_error("start routine");
+    }
+    worker->start();
+    return nullptr;
 }
 
 void client_worker::toggle_task(int fd) {
     m_lock.lock();
-
+    m_fds.push(fd);
     m_lock.unlock();
+    m_toggled_cond.notify_one();
 }
 
 void client_worker::start() {
     while (true) {
         std::unique_lock<std::mutex> lock(m_toggle_lock);
-        if (m_fds.empty()) {
-            lock.unlock();
-        }
-        m_toggled_cond.wait(lock);
+        m_toggled_cond.wait(lock, [this]() { return !m_fds.empty(); });
         int current_client_fd = m_fds.front();
-        m_toggled_cond.notify_all();
+        m_fds.pop();
         lock.unlock();
         process_client_fd(current_client_fd);
     }
@@ -69,3 +72,5 @@ void client_worker::process_client_fd(int client_fd) const {
         hs(close(client_fd), "close");
     }
 }
+
+void client_worker::add_task(int fd) { }

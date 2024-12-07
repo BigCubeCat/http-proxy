@@ -23,5 +23,5 @@ target_include_directories(${PROJECT_NAME}
 
 include_directories(${CMAKE_SOURCE_DIR}/src/proxy/include)
 
-target_link_libraries(${PROJECT_NAME} PUBLIC cache_lib exceptions_lib task_lib picohttpparser PRIVATE spdlog::spdlog)
+target_link_libraries(${PROJECT_NAME} PUBLIC thread_pool_lib cache_lib exceptions_lib task_lib picohttpparser PRIVATE spdlog::spdlog)
 

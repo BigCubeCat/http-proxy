@@ -3,8 +3,10 @@
 #include <condition_variable>
 #include <mutex>
 #include <queue>
+#include <stdexcept>
 #include <vector>
 
+#include <spdlog/spdlog.h>
 #include <sys/epoll.h>
 
 #include "task.hpp"
@@ -43,3 +45,8 @@ public:
 
     virtual ~client_worker() = default;
 };
+
+/*!
+ * Поточная функция для запуска объекта client-worker
+ */
+void *start_client_worker_routine(void *arg);

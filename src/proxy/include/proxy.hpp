@@ -5,7 +5,7 @@
 
 #include "cache.hpp"
 #include "client_worker.hpp"
-
+#include "thread_pool.hpp"
 
 /*!
  * Объект прокси
@@ -21,9 +21,10 @@ private:
     std::vector<epoll_event> m_events;
 
     int m_count_workers;
-    std::vector<std::shared_ptr<client_worker>> m_workers;
+    std::vector<std::shared_ptr<worker_iface>> m_workers;
 
     lru_cache_t<std::string> *m_cache;
+    std::shared_ptr<thread_pool_t> m_pool;
 
     /*!
      * Переключает файловый дискриптор в неблокирующий режим
@@ -31,7 +32,7 @@ private:
      */
     static void set_not_blocking(int fd);
 
-    void accept_client() const;
+    [[nodiscard]] int accept_client() const;
 
 public:
     explicit http_proxy_t(

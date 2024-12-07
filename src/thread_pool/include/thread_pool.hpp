@@ -22,13 +22,11 @@ private:
 
     std::vector<std::thread> m_threads;
     std::vector<std::shared_ptr<worker_iface>> m_tasks;
-    std::unordered_map<int, int> m_fd_map;    // связь [fd] -> [thread index in
-                                              // pool]
+    std::unordered_map<int, size_t> m_fd_map;    // связь [fd] -> [thread index
+                                                 // in pool]
 
 public:
-    explicit thread_pool_t(
-        const std::vector<std::shared_ptr<worker_iface>> &tasks
-    );
+    explicit thread_pool_t(std::vector<std::shared_ptr<worker_iface>> tasks);
 
     /*!
      * \brief Запускает потоки
@@ -43,7 +41,7 @@ public:
     /*!
      * \brief Сообщет пулу потоков об активности дескриптора
      */
-    void toggle_task(int fd);
+    void notify(int fd);
 
     ~thread_pool_t();
 };

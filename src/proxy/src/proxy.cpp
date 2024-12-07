@@ -18,6 +18,7 @@
 
 #include "const.hpp"
 #include "parser.hpp"
+#include "thread_pool.hpp"
 #include "utils.hpp"
 
 #include "proxy/proxy_runtime_exception.hpp"
@@ -67,8 +68,16 @@ void http_proxy_t::run() {
         return;
     }
 
-    m_workers.reserve(m_count_workers);
-    m_workers.push_back(std::make_shared<client_worker>(m_events, m_epoll_fd));
+    spdlog::info("count workers {}", m_count_workers);
+    m_workers.resize(m_count_workers);
+    for (int i = 0; i < m_count_workers; ++i) {
+        m_workers[i] = std::shared_ptr<worker_iface>(
+            std::make_shared<client_worker>(m_events, m_epoll_fd)
+        );
+    }
+    m_pool = std::make_shared<thread_pool_t>(m_workers);
+    m_pool->run(start_client_worker_routine);
+
     while (true) {
         int nfds = epoll_wait(m_epoll_fd, m_events.data(), MAX_EVENTS, -1);
         if (nfds < 0) {
@@ -81,11 +90,14 @@ void http_proxy_t::run() {
             spdlog::trace("обработка {} из {}", i, nfds);
             if (m_events[i].data.fd == m_listen_fd) {
                 spdlog::trace("серверный дескриптор");
-                accept_client();
+                auto client_fd = accept_client();
+                if (client_fd > 0) {
+                    m_pool->add_task(client_fd);
+                }
             }
             else {
                 spdlog::trace("клиентский дескриптор");
-                m_workers[0]->process_client_fd(m_events[i].data.fd);
+                m_pool->notify(m_events[i].data.fd);
             }
         }
     }
@@ -105,15 +117,16 @@ void http_proxy_t::set_not_blocking(int fd) {
     }
 }
 
-void http_proxy_t::accept_client() const {
+int http_proxy_t::accept_client() const {
     auto client_fd = accept(m_listen_fd, nullptr, nullptr);
     if (client_fd < 0) {
         spdlog::warn("accept failed");
-        return;
+        return -1;
     }
     set_not_blocking(client_fd);
     epoll_event ev {};
     ev.events  = EPOLLIN | EPOLLET;
     ev.data.fd = client_fd;
     hs(epoll_ctl(m_epoll_fd, EPOLL_CTL_ADD, client_fd, &ev), "epoll_ctl ADD");
+    return client_fd;
 }

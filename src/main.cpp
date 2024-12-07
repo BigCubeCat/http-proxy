@@ -2,6 +2,7 @@
 #include <memory>
 
 #include <spdlog/spdlog-inl.h>
+#include <spdlog/spdlog.h>
 
 #include "cache.hpp"
 #include "config.hpp"
@@ -18,7 +19,7 @@ const std::string USAGE_MESSAGE =
     "\t--cache-size - максимальный размер кэша\n";
 
 int main(int argc, char *argv[]) {
-    spdlog::set_level(spdlog::level::trace);
+    spdlog::set_level(spdlog::level::info);
     std::cout << "hello world!" << "\n";
     auto conf = load_config(argc, argv);
     if (conf.help) {
@@ -27,6 +28,8 @@ int main(int argc, char *argv[]) {
     }
     auto cache =
         std::make_shared<lru_cache_t<std::string>>(conf.cache_size, conf.ttl);
+
+    spdlog::trace("client threads = {}", conf.max_client_threads);
 
     http_proxy_t proxy(
         cache.get(), conf.proxy_port, static_cast<int>(conf.max_client_threads)
