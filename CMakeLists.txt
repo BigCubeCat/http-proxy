@@ -23,7 +23,7 @@ if (BUILD_TESTING)
   add_subdirectory(tests)
 endif ()
 
-link_directories(${CMAKE_BINARY_DIR}/lib/picohttpparser)
+link_directories(${CMAKE_BINARY_DIR}/lib/picohttpparser_)
 
 find_package(spdlog REQUIRED)
 target_link_libraries(${EXECUTABLE_NAME} PUBLIC
