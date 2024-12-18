@@ -1,3 +1,4 @@
+#include <csignal>
 #include <iostream>
 #include <memory>
 
@@ -7,6 +8,10 @@
 #include "cache.hpp"
 #include "config.hpp"
 #include "proxy.hpp"
+
+
+void sigpipe_handler(int unused) { }
+
 
 const std::string USAGE_MESSAGE =
     "\t--help - вывод сообщения о том как запускать прокси, возможных флагах и "
@@ -20,7 +25,10 @@ const std::string USAGE_MESSAGE =
 
 int main(int argc, char *argv[]) {
     spdlog::set_level(spdlog::level::trace);
-    std::cout << "hello world!" << "\n";
+
+    signal(SIGPIPE, sigpipe_handler);
+
+
     auto conf = load_config(argc, argv);
     if (conf.help) {
         std::cout << USAGE_MESSAGE;

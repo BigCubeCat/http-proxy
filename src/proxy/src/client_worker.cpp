@@ -105,10 +105,10 @@ bool send_all(int socket, const std::string &data) {
     size_t data_size        = data.size();
 
     while (total_bytes_sent < data_size) {
-        size_t bytes_left = data_size - total_bytes_sent;
-        ssize_t bytes_sent =
-            send(socket, data.data() + total_bytes_sent, bytes_left, 0);
-
+        size_t bytes_left  = data_size - total_bytes_sent;
+        ssize_t bytes_sent = send(
+            socket, data.data() + total_bytes_sent, bytes_left, MSG_DONTWAIT
+        );
         if (bytes_sent <= 0) {
             // Ошибка при отправке данных
             spdlog::error("error sending data: {}", strerror(errno));
