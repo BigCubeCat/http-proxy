@@ -9,6 +9,7 @@
 #include "parser.hpp"
 #include "utils.hpp"
 
+bool send_all(int socket, const std::string &data);
 
 void *start_client_worker_routine(void *arg) {
     auto *worker = static_cast<client_worker *>(arg);
@@ -67,32 +68,57 @@ void client_worker::process_client_fd(int client_fd) const {
                 response = value.value();
             }
             if (!response.empty()) {
-                /// ТУТ ХУЙНЯ
-                auto sent_now =
-                    send(client_fd, response.c_str(), response.size(), 0);
-                auto sent_values   = sent_now;
-                auto response_size = response.size();
-                while (sent_values != response_size) {
-                    spdlog::trace(
-                        "response_size = {}; sent_values = {}",
-                        response_size,
-                        sent_values
-                    );
-                    response = response.substr(sent_now, response.size());
-                    spdlog::trace("trace cuttetA");
-                    sent_now = send(
-                        // отпарвка данных в клиентский дескриптор частями
-                        client_fd,
-                        response.c_str(),
-                        response.size(),
-                        0
-                    );
-                    sent_values += sent_now;
+                if (!send_all(client_fd, response)) {
+                    spdlog::error("cant send");
                 }
+                // /// ТУТ ХУЙНЯ
+                // auto sent_now =
+                //     send(client_fd, response.c_str(), response.size(), 0);
+                // auto sent_values   = sent_now;
+                // auto response_size = response.size();
+                // while (sent_values != response_size) {
+                //     spdlog::trace(
+                //         "response_size = {}; sent_values = {}",
+                //         response_size,
+                //         sent_values
+                //     );
+                //     response = response.substr(sent_now, response.size());
+                //     spdlog::trace("trace cuttetA");
+                //     sent_now = send(
+                //         // отпарвка данных в клиентский дескриптор частями
+                //         client_fd,
+                //         response.c_str(),
+                //         response.size(),
+                //         0
+                //     );
+                //     sent_values += sent_now;
+                // }
             }
         }
         hs(close(client_fd), "close");
     }
+}
+
+// Функция для отправки строки по сети
+bool send_all(int socket, const std::string &data) {
+    size_t total_bytes_sent = 0;
+    size_t data_size        = data.size();
+
+    while (total_bytes_sent < data_size) {
+        size_t bytes_left = data_size - total_bytes_sent;
+        ssize_t bytes_sent =
+            send(socket, data.data() + total_bytes_sent, bytes_left, 0);
+
+        if (bytes_sent <= 0) {
+            // Ошибка при отправке данных
+            spdlog::error("error sending data: {}", strerror(errno));
+            return false;
+        }
+
+        total_bytes_sent += static_cast<size_t>(bytes_sent);
+    }
+
+    return true;    // Все данные успешно отправлены
 }
 
 void client_worker::add_task(int fd) { }

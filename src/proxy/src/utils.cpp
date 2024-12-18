@@ -60,7 +60,6 @@ forward_request(const std::string &host, const std::string &request) {
     while (bytes_read > 0) {
         response.write(buffer.data(), bytes_read);
         bytes_read = recv(sock, buffer.data(), BUFFER_SIZE, 0);
-        // spdlog::trace("bytes_read = {}", bytes_read);
     }
 
     std::string a;

@@ -1,6 +1,5 @@
 #include "proxy.hpp"
 
-#include <array>
 #include <cstring>
 #include <memory>
 #include <string>
@@ -17,7 +16,6 @@
 #include <sys/socket.h>
 
 #include "const.hpp"
-#include "parser.hpp"
 #include "thread_pool.hpp"
 #include "utils.hpp"
 
@@ -38,17 +36,21 @@ void http_proxy_t::run() {
         spdlog::critical("socket creation failed");
         return;
     }
-    struct sockaddr_in server_addr {};
+    sockaddr_in server_addr {};
     server_addr.sin_family      = AF_INET;
     server_addr.sin_addr.s_addr = INADDR_ANY;
     server_addr.sin_port        = htons(m_port);
-    if (bind(m_listen_fd, (struct sockaddr *)&server_addr, sizeof(server_addr))
-        < 0) {
-        spdlog::critical("Bind failed");
+    auto bind_status            = bind(
+        m_listen_fd,
+        reinterpret_cast<sockaddr *>(&server_addr),
+        sizeof(server_addr)
+    );
+    if (bind_status < 0) {
+        spdlog::critical("bind failed");
         return;
     }
     if (listen(m_listen_fd, SOMAXCONN) < 0) {
-        spdlog::critical("Listen failed");
+        spdlog::critical("listen failed");
         return;
     }
     set_not_blocking(m_listen_fd);
@@ -58,11 +60,9 @@ void http_proxy_t::run() {
         spdlog::critical("epoll creation failed");
         return;
     }
-
     epoll_event ev {};
     ev.events  = EPOLLIN;
     ev.data.fd = m_listen_fd;
-
     if (epoll_ctl(m_epoll_fd, EPOLL_CTL_ADD, m_listen_fd, &ev) < 0) {
         spdlog::critical("epoll_ctl failed");
         return;
@@ -91,9 +91,11 @@ void http_proxy_t::run() {
             if (m_events[i].data.fd == m_listen_fd) {
                 spdlog::trace("серверный дескриптор");
                 auto client_fd = accept_client();
-                if (client_fd > 0) {
-                    m_pool->add_task(client_fd);
+                if (client_fd <= 0) {
+                    spdlog::error("failed to accept client");
+                    continue;
                 }
+                m_pool->add_task(client_fd);
             }
             else {
                 spdlog::trace("клиентский дескриптор");

@@ -28,6 +28,12 @@ docker-compose up --build
 
 ## Тестирование
 
+- [x] sequential
+- [ ] concurrent-batches
+- [x] cache-invalidation
+- [ ] parallel-clients
+- [ ] incremental-interrupt
+
 0. Собирите проект в директорию `build`
 
 ```bash
