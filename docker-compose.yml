@@ -8,15 +8,3 @@ services:
     container_name: proxy
     ports:
       - "8080:8080"
-
-  client1:
-    build: tests
-    container_name: client1
-    depends_on:
-      - proxy
-
-  client2:
-    build: tests
-    container_name: client2
-    depends_on:
-      - proxy

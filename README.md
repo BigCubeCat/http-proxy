@@ -51,6 +51,7 @@ ctest --output-on-failure --test-dir ./build
 ### Thread Pool & Cache
 
 - [x] Функционал кэша
+- [x] Инвалидация кэша
 - [ ] Частичная загрузка файла в кэш
 
 ### Функционал
