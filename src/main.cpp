@@ -19,7 +19,7 @@ const std::string USAGE_MESSAGE =
     "\t--cache-size - максимальный размер кэша\n";
 
 int main(int argc, char *argv[]) {
-    spdlog::set_level(spdlog::level::trace);
+    spdlog::set_level(spdlog::level::info);
     std::cout << "hello world!" << "\n";
     auto conf = load_config(argc, argv);
     if (conf.help) {

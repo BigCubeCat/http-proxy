@@ -16,13 +16,6 @@ add_subdirectory(src/exceptions)
 add_subdirectory(src/cache)
 
 add_executable(${EXECUTABLE_NAME} src/main.cpp)
-
-enable_testing()
-include(CTest)
-if (BUILD_TESTING)
-  add_subdirectory(tests)
-endif ()
-
 link_directories(${CMAKE_BINARY_DIR}/lib/picohttpparser)
 
 find_package(spdlog REQUIRED)
@@ -35,4 +28,21 @@ proxy_lib
 thread_pool_lib
 spdlog::spdlog
 )
+
+
+find_program (BASH_PROGRAM bash)
+
+enable_testing()
+include(CTest)
+if (BUILD_TESTING)
+  add_subdirectory(tests)
+  if (BASH_PROGRAM)
+    add_test(sequential ${BASH_PROGRAM} ${CMAKE_CURRENT_SOURCE_DIR}/tests/1.sh)
+    add_test(concurrent-batches ${BASH_PROGRAM} ${CMAKE_CURRENT_SOURCE_DIR}/tests/2.sh)
+    add_test(cache-invalidation ${BASH_PROGRAM} ${CMAKE_CURRENT_SOURCE_DIR}/tests/3.sh)
+    add_test(parallel-clients ${BASH_PROGRAM} ${CMAKE_CURRENT_SOURCE_DIR}/tests/4.sh)
+    add_test(incremental-interrupt ${BASH_PROGRAM} ${CMAKE_CURRENT_SOURCE_DIR}/tests/5.sh)
+  endif(BASH_PROGRAM)
+endif (BUILD_TESTING)
+
 

@@ -1,6 +1,6 @@
 # HTTP1.0 Proxy
 
-## Usage
+## Исользование
 
 ```bash
 ➜  http-proxy git:(v0.1) ✗ ./build/http_proxy --help
@@ -17,11 +17,53 @@ hello world!
 
 ```bash
 cmake -S . -B build && cmake --build build
-./build/http_proxy --help
+./build/http_proxy
 ```
 
-## Using docker
+## Запуск через docker
 
 ```bash
 docker-compose up --build
 ```
+
+## Тестирование
+
+0. Собирите проект в директорию `build`
+
+```bash
+cmake -S . -B build  && cmake --build buildc
+```
+
+1. Запустите прокси на 9000 порту
+
+```bash
+./http_proxy --port 9000
+```
+
+2. Параллельно запустите `ctest`
+
+```bash
+ctest --output-on-failure --test-dir ./build
+```
+
+## TODO
+
+### Thread Pool & Cache
+
+- [x] Функционал кэша
+- [ ] Частичная загрузка файла в кэш
+
+### Функционал
+
+- [x] Обычные HTML страницы
+- [x] Файлы
+- [ ] redirect
+
+### HTTP Методы
+
+- [x] GET
+- [ ] POST
+- [ ] PUT
+- [ ] UPDATE
+- [ ] DELETE
+- [ ] PATCH
