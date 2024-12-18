@@ -32,7 +32,7 @@ docker-compose up --build
 - [ ] concurrent-batches
 - [x] cache-invalidation
 - [ ] parallel-clients
-- [ ] incremental-interrupt
+- [x] incremental-interrupt
 
 0. Собирите проект в директорию `build`
 

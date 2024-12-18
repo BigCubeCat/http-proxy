@@ -10,7 +10,9 @@
 #include "proxy.hpp"
 
 
-void sigpipe_handler(int unused) { }
+void sigpipe_handler(int _unused) {
+    spdlog::warn("SIGPIPE recieved");
+}
 
 
 const std::string USAGE_MESSAGE =
@@ -27,7 +29,6 @@ int main(int argc, char *argv[]) {
     spdlog::set_level(spdlog::level::trace);
 
     signal(SIGPIPE, sigpipe_handler);
-
 
     auto conf = load_config(argc, argv);
     if (conf.help) {
