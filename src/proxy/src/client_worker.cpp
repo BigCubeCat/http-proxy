@@ -67,10 +67,28 @@ void client_worker::process_client_fd(int client_fd) const {
                 response = value.value();
             }
             if (!response.empty()) {
-                hs(static_cast<int>(
-                       send(client_fd, response.c_str(), response.size(), 0)
-                   ),
-                   "send in process_client_fd");
+                /// ТУТ ХУЙНЯ
+                auto sent_now =
+                    send(client_fd, response.c_str(), response.size(), 0);
+                auto sent_values   = sent_now;
+                auto response_size = response.size();
+                while (sent_values != response_size) {
+                    spdlog::trace(
+                        "response_size = {}; sent_values = {}",
+                        response_size,
+                        sent_values
+                    );
+                    response = response.substr(sent_now, response.size());
+                    spdlog::trace("trace cuttetA");
+                    sent_now = send(
+                        // отпарвка данных в клиентский дескриптор частями
+                        client_fd,
+                        response.c_str(),
+                        response.size(),
+                        0
+                    );
+                    sent_values += sent_now;
+                }
             }
         }
         hs(close(client_fd), "close");

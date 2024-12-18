@@ -27,8 +27,8 @@ using unique_lock = std::unique_lock<std::shared_mutex>;
 template <typename T>
 class lru_cache_t {
 private:
-    long m_ttl    = 5;
     size_t m_size = 1024;
+    long m_ttl    = 5;
     cache_map<T> m_hash_map;
     std::list<std::string> m_usage_list;
     mutable std::shared_mutex m_lock;    // в отличе от std::mutex можно читать
@@ -96,7 +96,6 @@ public:
             touch(it);
         }
         else {
-            spdlog::debug("adding new element {}={}", key, element);
             while (m_usage_list.size() >= m_size) {
                 delete_least_used_element();
             }

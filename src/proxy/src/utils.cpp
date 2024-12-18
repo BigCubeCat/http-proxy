@@ -55,12 +55,22 @@ forward_request(const std::string &host, const std::string &request) {
 
     std::array<char, BUFFER_SIZE> buffer {};
     std::ostringstream response;
-    ssize_t bytes_read;
-    while ((bytes_read = recv(sock, buffer.data(), BUFFER_SIZE, 0)) > 0) {
+    ssize_t bytes_read = recv(sock, buffer.data(), BUFFER_SIZE, 0);
+    spdlog::trace("bytes_read = {}", bytes_read);
+    while (bytes_read > 0) {
         response.write(buffer.data(), bytes_read);
+        bytes_read = recv(sock, buffer.data(), BUFFER_SIZE, 0);
+        // spdlog::trace("bytes_read = {}", bytes_read);
     }
 
+    std::string a;
+    for (int i = 0; i < 500; ++i) {
+        a += response.str()[i];
+    }
+    spdlog::warn("header = {}", a);
+
     hs(close(sock), "close error");
+    spdlog::warn("response size = {}", response.str().size());
     return response.str();
 }
 
