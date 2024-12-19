@@ -3,10 +3,10 @@
 #include <string>
 
 // Максимальное количество клиентов
-constexpr int MAX_EVENTS         = 10;
+constexpr int MAX_EVENTS         = 10000;
 constexpr int BUFFER_SIZE        = 256;
 constexpr int CACHE_TTL          = 300;    // Время жизни кеша в секундах
-constexpr int EPOLL_WAIT_TIMEOUT = 100;
+constexpr int EPOLL_WAIT_TIMEOUT = -1;
 constexpr int EXIT_FD            = -777;
 
 const std::string USAGE_MESSAGE =

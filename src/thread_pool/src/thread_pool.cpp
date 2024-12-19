@@ -1,5 +1,6 @@
 #include "thread_pool.hpp"
 
+#include <csignal>
 #include <cstddef>
 #include <thread>
 

@@ -1,5 +1,6 @@
 #include "client_worker.hpp"
 
+#include <csignal>
 #include <exception>
 #include <mutex>
 
@@ -30,6 +31,12 @@ void client_worker::toggle_task(int fd) {
 }
 
 void client_worker::start() {
+    sigset_t set;
+    sigemptyset(&set);
+    sigaddset(&set, SIGINT);
+    sigaddset(&set, SIGPIPE);
+    pthread_sigmask(SIG_BLOCK, &set, nullptr);
+
     while (m_worker_is_running) {
         std::unique_lock<std::mutex> lock(m_toggle_lock);
         m_toggled_cond.wait(lock, [this]() { return !m_fds.empty(); });

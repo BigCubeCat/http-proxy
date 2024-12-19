@@ -26,17 +26,18 @@ const std::string USAGE_MESSAGE =
     "\t--cache-size - максимальный размер кэша\n";
 
 
-std::shared_ptr<http_proxy_t> proxy_inst;
+http_proxy_t *proxy_inst;
 
 void sigint_handler(int status) {
     spdlog::info("exiting");
     proxy_inst->stop(status);
+    delete proxy_inst;
 }
 
 int main(int argc, char *argv[]) {
     spdlog::set_level(spdlog::level::trace);
 
-    signal(SIGPIPE, sigpipe_handler);
+    std::signal(SIGPIPE, sigpipe_handler);
 
     auto conf = load_config(argc, argv);
     if (conf.help) {
@@ -48,13 +49,15 @@ int main(int argc, char *argv[]) {
 
     spdlog::trace("client threads = {}", conf.max_client_threads);
 
-    proxy_inst = std::make_shared<http_proxy_t>(
+    proxy_inst = new http_proxy_t(
         cache.get(), conf.proxy_port, static_cast<int>(conf.max_client_threads)
     );
 
-    signal(SIGINT, sigint_handler);
+    // std::signal(SIGINT, sigint_handler);
 
     proxy_inst->run();
+
+    delete proxy_inst;
 
     return 0;
 }
