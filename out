@@ -1,8 +1,0 @@
-[2024-12-18 22:40:52.803] [trace] client threads = 4
-[2024-12-18 22:40:52.913] [info] count workers 4
-[2024-12-18 22:40:52.922] [debug] build thread_pool_t with 4 pools
-[2024-12-18 22:40:52.925] [debug] cout_pools=4; tasks_size=4
-[2024-12-18 22:40:52.926] [trace] starting thread 0
-[2024-12-18 22:40:52.993] [trace] starting thread 1
-[2024-12-18 22:40:53.052] [trace] starting thread 2
-[2024-12-18 22:40:53.108] [trace] starting thread 3
