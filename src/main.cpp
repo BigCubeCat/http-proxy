@@ -2,6 +2,8 @@
 #include <iostream>
 #include <memory>
 
+#include <unistd.h>
+
 #include <spdlog/spdlog-inl.h>
 #include <spdlog/spdlog.h>
 
@@ -15,12 +17,13 @@ void sigpipe_handler(int _unused) {
     spdlog::warn("SIGPIPE recieved");
 }
 
-http_proxy_t *proxy_inst;
+std::shared_ptr<http_proxy_t> proxy_inst;
 
 void sigint_handler(int status) {
     spdlog::info("exiting");
     proxy_inst->stop(status);
-    delete proxy_inst;
+    sleep(2);
+    // delete proxy_inst;
 }
 
 int main(int argc, char *argv[]) {
@@ -35,15 +38,13 @@ int main(int argc, char *argv[]) {
     }
     auto cache = std::make_shared<cache_t>(conf.cache_size, conf.ttl);
 
-    proxy_inst = new http_proxy_t(
+    proxy_inst = std::make_shared<http_proxy_t>(
         cache.get(), conf.proxy_port, static_cast<int>(conf.max_client_threads)
     );
 
-    // std::signal(SIGINT, sigint_handler);
+    std::signal(SIGINT, sigint_handler);
 
     proxy_inst->run();
-
-    delete proxy_inst;
 
     return 0;
 }

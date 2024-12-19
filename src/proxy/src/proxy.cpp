@@ -69,7 +69,7 @@ void http_proxy_t::run() {
         nfds = epoll_wait(
             m_epoll_fd, m_events.data(), MAX_EVENTS, EPOLL_WAIT_TIMEOUT
         );
-        if (!m_is_running || nfds < 0) {
+        if (nfds < 0 || !m_is_running) {
             break;
         }
         for (int i = 0; i < nfds; ++i) {
