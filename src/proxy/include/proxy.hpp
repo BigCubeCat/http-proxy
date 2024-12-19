@@ -4,7 +4,6 @@
 #include <sys/epoll.h>
 
 #include "cache.hpp"
-#include "client_worker.hpp"
 #include "thread_pool.hpp"
 
 /*!
@@ -12,6 +11,7 @@
  */
 class http_proxy_t {
 private:
+    int m_exit_fd       = -1;
     int m_epoll_fd      = -1;
     int m_listen_fd     = -1;
     int m_port          = 8080;
@@ -32,6 +32,8 @@ private:
      */
     static void set_not_blocking(int fd);
 
+    void add_exit_fd();
+
     [[nodiscard]] int accept_client() const;
 
 public:
@@ -40,4 +42,6 @@ public:
     );
 
     void run();
+
+    void stop(int status);
 };

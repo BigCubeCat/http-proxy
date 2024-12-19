@@ -17,6 +17,7 @@
  */
 class client_worker : public worker_iface {
 private:
+    bool m_worker_is_running = true;
     /// Файловый дискриптор, из proxy
     int m_epoll_fd = -1;
     std::vector<epoll_event> m_events;
@@ -39,6 +40,8 @@ public:
     void process_client_fd(int client_fd) const;
 
     void start() override;
+
+    void stop() override;
 
     /*!
      * Добавить файловый регистр на выполнение операции

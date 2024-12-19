@@ -33,6 +33,8 @@ public:
      */
     void run(const std::function<void *(void *)> &start_routine);
 
+    void stop();
+
     /*!
      * \brief Добавляет файловый дискриптор в обработку
      */

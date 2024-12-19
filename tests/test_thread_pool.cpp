@@ -36,6 +36,8 @@ public:
         }
         return res;
     }
+
+    void stop() override { }
     explicit test_worker(int num) : m_num(num) {
         m_res.resize(m_num);
     }

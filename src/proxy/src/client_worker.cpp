@@ -1,5 +1,6 @@
 #include "client_worker.hpp"
 
+#include <exception>
 #include <mutex>
 
 #include <spdlog/spdlog.h>
@@ -29,7 +30,7 @@ void client_worker::toggle_task(int fd) {
 }
 
 void client_worker::start() {
-    while (true) {
+    while (m_worker_is_running) {
         std::unique_lock<std::mutex> lock(m_toggle_lock);
         m_toggled_cond.wait(lock, [this]() { return !m_fds.empty(); });
         int current_client_fd = m_fds.front();
@@ -37,9 +38,18 @@ void client_worker::start() {
         lock.unlock();
         process_client_fd(current_client_fd);
     }
+    spdlog::debug("worker finished");
+}
+
+void client_worker::stop() {
+    m_worker_is_running = false;
+    toggle_task(-1);
 }
 
 void client_worker::process_client_fd(int client_fd) const {
+    if (client_fd < 0) {
+        return;
+    }
     std::array<char, BUFFER_SIZE> buffer {};
     auto bytes_read = read(client_fd, buffer.data(), BUFFER_SIZE);
     if (bytes_read <= 0) {
@@ -71,28 +81,6 @@ void client_worker::process_client_fd(int client_fd) const {
                 if (!send_all(client_fd, response)) {
                     spdlog::error("cant send");
                 }
-                // /// ТУТ ХУЙНЯ
-                // auto sent_now =
-                //     send(client_fd, response.c_str(), response.size(), 0);
-                // auto sent_values   = sent_now;
-                // auto response_size = response.size();
-                // while (sent_values != response_size) {
-                //     spdlog::trace(
-                //         "response_size = {}; sent_values = {}",
-                //         response_size,
-                //         sent_values
-                //     );
-                //     response = response.substr(sent_now, response.size());
-                //     spdlog::trace("trace cuttetA");
-                //     sent_now = send(
-                //         // отпарвка данных в клиентский дескриптор частями
-                //         client_fd,
-                //         response.c_str(),
-                //         response.size(),
-                //         0
-                //     );
-                //     sent_values += sent_now;
-                // }
             }
         }
         hs(close(client_fd), "close");

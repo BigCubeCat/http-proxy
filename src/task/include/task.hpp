@@ -11,6 +11,8 @@ public:
      * \brief Функция, запускаемая в отдельном потоке
      */
     virtual void start() = 0;
+
+    virtual void stop() = 0;
     /*!
      * \brief добавление подзадачи
      */

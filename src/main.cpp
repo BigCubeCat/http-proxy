@@ -25,6 +25,14 @@ const std::string USAGE_MESSAGE =
     "\t--cache-ttl - время жизни кэш записи\n"
     "\t--cache-size - максимальный размер кэша\n";
 
+
+std::shared_ptr<http_proxy_t> proxy_inst;
+
+void sigint_handler(int status) {
+    spdlog::info("exiting");
+    proxy_inst->stop(status);
+}
+
 int main(int argc, char *argv[]) {
     spdlog::set_level(spdlog::level::trace);
 
@@ -40,11 +48,13 @@ int main(int argc, char *argv[]) {
 
     spdlog::trace("client threads = {}", conf.max_client_threads);
 
-    http_proxy_t proxy(
+    proxy_inst = std::make_shared<http_proxy_t>(
         cache.get(), conf.proxy_port, static_cast<int>(conf.max_client_threads)
     );
 
-    proxy.run();
+    signal(SIGINT, sigint_handler);
+
+    proxy_inst->run();
 
     return 0;
 }

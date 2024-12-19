@@ -1,6 +1,7 @@
 #include "proxy.hpp"
 
 #include <cstring>
+#include <iostream>
 #include <memory>
 #include <string>
 #include <vector>
@@ -13,8 +14,10 @@
 #include <netinet/in.h>
 #include <spdlog/spdlog.h>
 #include <sys/epoll.h>
+#include <sys/eventfd.h>
 #include <sys/socket.h>
 
+#include "client_worker.hpp"
 #include "const.hpp"
 #include "thread_pool.hpp"
 #include "utils.hpp"
@@ -31,7 +34,8 @@ http_proxy_t::http_proxy_t(
       m_cache(cache) { }
 
 void http_proxy_t::run() {
-    m_listen_fd = socket(AF_INET, SOCK_STREAM, 0);
+    m_is_running = true;
+    m_listen_fd  = socket(AF_INET, SOCK_STREAM, 0);
     if (m_listen_fd < 0) {
         spdlog::critical("socket creation failed");
         return;
@@ -78,8 +82,16 @@ void http_proxy_t::run() {
     m_pool = std::make_shared<thread_pool_t>(m_workers);
     m_pool->run(start_client_worker_routine);
 
-    while (true) {
-        int nfds = epoll_wait(m_epoll_fd, m_events.data(), MAX_EVENTS, -1);
+
+    while (m_is_running) {
+        spdlog::trace("statring while cycle");
+        int nfds = epoll_wait(
+            m_epoll_fd, m_events.data(), MAX_EVENTS, EPOLL_WAIT_TIMEOUT
+        );
+        spdlog::info("nfds = {}", nfds);
+        spdlog::trace("after epoll_wait");
+        if (!m_is_running)
+            break;
         if (nfds < 0) {
             spdlog::error("epoll wait failed");
             return;
@@ -88,6 +100,12 @@ void http_proxy_t::run() {
 
         for (int i = 0; i < nfds; ++i) {
             spdlog::trace("обработка {} из {}", i, nfds);
+            if (m_events[i].data.fd == EXIT_FD) {
+                spdlog::warn("EXITING");
+                m_is_running = false;
+                m_pool->stop();
+                break;
+            }
             if (m_events[i].data.fd == m_listen_fd) {
                 spdlog::trace("серверный дескриптор");
                 auto client_fd = accept_client();
@@ -103,7 +121,7 @@ void http_proxy_t::run() {
             }
         }
     }
-    close(m_listen_fd);
+    hs(close(m_listen_fd), "error on close listen fd");
 }
 
 void http_proxy_t::set_not_blocking(int fd) {
@@ -131,4 +149,19 @@ int http_proxy_t::accept_client() const {
     ev.data.fd = client_fd;
     hs(epoll_ctl(m_epoll_fd, EPOLL_CTL_ADD, client_fd, &ev), "epoll_ctl ADD");
     return client_fd;
+}
+
+void http_proxy_t::stop(int status) {
+    spdlog::info("exiting with status {}", status);
+    m_pool->stop();
+    m_is_running = false;
+}
+
+void http_proxy_t::add_exit_fd() {
+    // Создаем eventfd для уведомления о завершении
+    m_exit_fd = eventfd(0, EFD_NONBLOCK);
+    if (m_exit_fd == -1) {
+        close(m_epoll_fd);
+        return;
+    }
 }

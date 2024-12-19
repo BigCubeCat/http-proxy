@@ -24,6 +24,11 @@ void thread_pool_t::run(const std::function<void *(void *)> &start_routine) {
         m_threads[i].detach();
     }
 }
+void thread_pool_t::stop() {
+    for (const auto &task : m_tasks) {
+        task->stop();
+    }
+}
 
 void thread_pool_t::add_task(int fd) {
     if (m_tasks[m_next_thread] == nullptr) {
