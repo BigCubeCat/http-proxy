@@ -1,0 +1,22 @@
+\doxysection{config.\+hpp}
+\hypertarget{config_8hpp_source}{}\label{config_8hpp_source}\index{src/proxy/include/config.hpp@{src/proxy/include/config.hpp}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ }
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ <cstddef>}}
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#include\ <cstdint>}}
+\DoxyCodeLine{00005\ }
+\DoxyCodeLine{00006\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{structproxy__config__t}{proxy\_config\_t}}\ \{}
+\DoxyCodeLine{00009\ \ \ \ \ uint16\_t\ \mbox{\hyperlink{structproxy__config__t_a5a4e52680843a3dbf5c7ab881d5ef1d8}{proxy\_port}}\ =\ 8080;}
+\DoxyCodeLine{00013\ \ \ \ \ \textcolor{keywordtype}{size\_t}\ \mbox{\hyperlink{structproxy__config__t_a86e53db45e27d3933c8b014db837809c}{max\_client\_threads}}\ =\ 4;}
+\DoxyCodeLine{00018\ \ \ \ \ \textcolor{keywordtype}{bool}\ \mbox{\hyperlink{structproxy__config__t_a8b218af3be8da8275772854eedb42204}{help}}\ =\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00022\ \ \ \ \ \textcolor{keywordtype}{long}\ \mbox{\hyperlink{structproxy__config__t_a4406be0fd8f980ec522a15bdbb5ab11f}{ttl}}\ =\ 5;}
+\DoxyCodeLine{00026\ \ \ \ \ \textcolor{keywordtype}{size\_t}\ \mbox{\hyperlink{structproxy__config__t_a0dafe1918f0ef4eb53359bfb84f4f18d}{cache\_size}}\ =\ 10000;}
+\DoxyCodeLine{00027\ \};}
+\DoxyCodeLine{00028\ }
+\DoxyCodeLine{00029\ \mbox{\hyperlink{structproxy__config__t}{proxy\_config\_t}}\ load\_config(\textcolor{keywordtype}{int}\ argc,\ \textcolor{keywordtype}{char}\ **argv);}
+\DoxyCodeLine{00030\ }
+\DoxyCodeLine{00031\ \textcolor{keywordtype}{void}\ debug(\textcolor{keyword}{const}\ \mbox{\hyperlink{structproxy__config__t}{proxy\_config\_t}}\ \&conf);}
+
+\end{DoxyCode}

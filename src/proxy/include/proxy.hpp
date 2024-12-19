@@ -3,7 +3,7 @@
 
 #include <sys/epoll.h>
 
-#include "cache.hpp"
+#include "proxy_cache.hpp"
 #include "thread_pool.hpp"
 
 /*!
@@ -23,23 +23,13 @@ private:
     int m_count_workers;
     std::vector<std::shared_ptr<worker_iface>> m_workers;
 
-    lru_cache_t<std::string> *m_cache;
+    cache_t *m_cache;
     std::shared_ptr<thread_pool_t> m_pool;
-
-    /*!
-     * Переключает файловый дискриптор в неблокирующий режим
-     * \param[in] fd файловый дескриптор
-     */
-    static void set_not_blocking(int fd);
-
-    void add_exit_fd();
 
     [[nodiscard]] int accept_client() const;
 
 public:
-    explicit http_proxy_t(
-        lru_cache_t<std::string> *cache, int port, int count_threads
-    );
+    explicit http_proxy_t(cache_t *cache, int port, int count_threads);
 
     void run();
 

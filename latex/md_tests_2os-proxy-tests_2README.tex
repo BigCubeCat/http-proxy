@@ -1,0 +1,54 @@
+\chapter{Simple proxy tests}
+\hypertarget{md_tests_2os-proxy-tests_2README}{}\label{md_tests_2os-proxy-tests_2README}\index{Simple proxy tests@{Simple proxy tests}}
+\label{md_tests_2os-proxy-tests_2README_autotoc_md9}%
+\Hypertarget{md_tests_2os-proxy-tests_2README_autotoc_md9}%
+ Usage\+:
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{./<test>\ -\/-\/help}
+
+\end{DoxyCode}
+\hypertarget{md_tests_2os-proxy-tests_2README_autotoc_md10}{}\doxysection{\texorpdfstring{Params}{Params}}\label{md_tests_2os-proxy-tests_2README_autotoc_md10}
+
+\begin{DoxyItemize}
+\item {\ttfamily -\/-\/port} -\/ port that local proxy is listening on. Default\+: 8080.
+\item {\ttfamily -\/-\/url} -\/ url to access through proxy. Default\+: \textquotesingle{}\href{http://xcal1.vodafone.co.uk/10MB.zip'}{\texttt{ http\+://xcal1.\+vodafone.\+co.\+uk/10\+MB.\+zip\textquotesingle{}}}.
+\item {\ttfamily -\/-\/requests} -\/ number of requests. Default\+: 10.
+\item {\ttfamily -\/-\/timeout} -\/ curl timeout (see {\ttfamily curl -\/-\/max-\/time}). Default\+: 10.
+\item {\ttfamily -\/-\/concurrency} -\/ number of parallel requests if available for test. Default\+: 10.
+\end{DoxyItemize}\hypertarget{md_tests_2os-proxy-tests_2README_autotoc_md11}{}\doxysection{\texorpdfstring{Dependencies}{Dependencies}}\label{md_tests_2os-proxy-tests_2README_autotoc_md11}
+Basic calculator\+:
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{sudo\ apt\ install\ bc}
+
+\end{DoxyCode}
+\hypertarget{md_tests_2os-proxy-tests_2README_autotoc_md12}{}\doxysection{\texorpdfstring{Examples}{Examples}}\label{md_tests_2os-proxy-tests_2README_autotoc_md12}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{./1-\/sequential.sh\ -\/-\/port\ 9000\ -\/-\/url\ http://xcal1.vodafone.co.uk/5MB.zip\ -\/-\/requests\ 10\ -\/-\/timeout\ 60}
+
+\end{DoxyCode}
+ 
+\begin{DoxyCode}{0}
+\DoxyCodeLine{./2-\/concurrent-\/batches.sh\ -\/-\/port\ 9000\ -\/-\/url\ http://xcal1.vodafone.co.uk/5MB.zip\ -\/-\/requests\ 50\ -\/-\/timeout\ 10\ -\/-\/concurrency\ 20}
+
+\end{DoxyCode}
+ 
+\begin{DoxyCode}{0}
+\DoxyCodeLine{./3-\/cache-\/invalidation.sh\ -\/-\/port\ 9000\ -\/-\/url\ http://xcal1.vodafone.co.uk/5MB.zip\ -\/-\/requests\ 10\ -\/-\/timeout\ 10}
+
+\end{DoxyCode}
+ 
+\begin{DoxyCode}{0}
+\DoxyCodeLine{./4-\/parallel-\/clients.sh\ -\/-\/port\ 9000\ -\/-\/url\ http://xcal1.vodafone.co.uk/5MB.zip\ -\/-\/requests\ 500\ -\/-\/timeout\ 10}
+
+\end{DoxyCode}
+ 
+\begin{DoxyCode}{0}
+\DoxyCodeLine{./5-\/incremental-\/interrupt.sh\ -\/-\/port\ 9000\ -\/-\/url\ http://xcal1.vodafone.co.uk/5MB.zip\ -\/-\/requests\ 10\ -\/-\/timeout\ 10}
+
+\end{DoxyCode}
+ 

@@ -1,0 +1,26 @@
+\doxysection{const.\+hpp}
+\hypertarget{const_8hpp_source}{}\label{const_8hpp_source}\index{src/proxy/include/const.hpp@{src/proxy/include/const.hpp}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ }
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ <string>}}
+\DoxyCodeLine{00004\ }
+\DoxyCodeLine{00005\ \textcolor{comment}{//\ Максимальное\ количество\ клиентов}}
+\DoxyCodeLine{00006\ \textcolor{keyword}{constexpr}\ \textcolor{keywordtype}{int}\ MAX\_EVENTS\ \ \ \ \ \ \ \ \ =\ 10000;}
+\DoxyCodeLine{00007\ \textcolor{keyword}{constexpr}\ \textcolor{keywordtype}{int}\ BUFFER\_SIZE\ \ \ \ \ \ \ \ =\ 256;}
+\DoxyCodeLine{00008\ \textcolor{keyword}{constexpr}\ \textcolor{keywordtype}{int}\ CACHE\_TTL\ \ \ \ \ \ \ \ \ \ =\ 300;\ \ \ \ \textcolor{comment}{//\ Время\ жизни\ кеша\ в\ секундах}}
+\DoxyCodeLine{00009\ \textcolor{keyword}{constexpr}\ \textcolor{keywordtype}{int}\ EPOLL\_WAIT\_TIMEOUT\ =\ -\/1;}
+\DoxyCodeLine{00010\ \textcolor{keyword}{constexpr}\ \textcolor{keywordtype}{int}\ EXIT\_FD\ \ \ \ \ \ \ \ \ \ \ \ =\ -\/777;}
+\DoxyCodeLine{00011\ }
+\DoxyCodeLine{00012\ \textcolor{keyword}{const}\ std::string\ USAGE\_MESSAGE\ =}
+\DoxyCodeLine{00013\ \ \ \ \ \textcolor{stringliteral}{"{}\(\backslash\)t-\/-\/help\ -\/\ вывод\ сообщения\ о\ том\ как\ запускать\ прокси,\ возможных\ флагах\ и\ "{}}}
+\DoxyCodeLine{00014\ \ \ \ \ \textcolor{stringliteral}{"{}их\ описания\(\backslash\)n"{}}}
+\DoxyCodeLine{00015\ \ \ \ \ \textcolor{stringliteral}{"{}\(\backslash\)t-\/-\/port\ порт,\ на\ котором\ слушает\ прокси.\ По\ умолчанию\ 8080\(\backslash\)n"{}}}
+\DoxyCodeLine{00016\ \ \ \ \ \textcolor{stringliteral}{"{}\(\backslash\)t-\/-\/max-\/client-\/threads\ -\/\ максимальное\ кол-\/во\ работающих\ "{}}}
+\DoxyCodeLine{00017\ \ \ \ \ \textcolor{stringliteral}{"{}потоков\(\backslash\)n\(\backslash\)t\(\backslash\)t(размер\ "{}}}
+\DoxyCodeLine{00018\ \ \ \ \ \textcolor{stringliteral}{"{}пула\ клиентских\ подключений).\ \ По\ умолчанию\ 4\(\backslash\)n"{}}}
+\DoxyCodeLine{00019\ \ \ \ \ \textcolor{stringliteral}{"{}\(\backslash\)t-\/-\/cache-\/ttl\ -\/\ время\ жизни\ кэш\ записи\(\backslash\)n"{}}}
+\DoxyCodeLine{00020\ \ \ \ \ \textcolor{stringliteral}{"{}\(\backslash\)t-\/-\/cache-\/size\ -\/\ максимальный\ размер\ кэша\(\backslash\)n"{}};}
+
+\end{DoxyCode}

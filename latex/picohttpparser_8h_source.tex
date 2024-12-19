@@ -1,0 +1,96 @@
+\doxysection{picohttpparser.\+h}
+\hypertarget{picohttpparser_8h_source}{}\label{picohttpparser_8h_source}\index{lib/picohttpparser/picohttpparser.h@{lib/picohttpparser/picohttpparser.h}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{comment}{/*}}
+\DoxyCodeLine{00002\ \textcolor{comment}{\ *\ Copyright\ (c)\ 2009-\/2014\ Kazuho\ Oku,\ Tokuhiro\ Matsuno,\ Daisuke\ Murase,}}
+\DoxyCodeLine{00003\ \textcolor{comment}{\ *\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ Shigeo\ Mitsunari}}
+\DoxyCodeLine{00004\ \textcolor{comment}{\ *}}
+\DoxyCodeLine{00005\ \textcolor{comment}{\ *\ The\ software\ is\ licensed\ under\ either\ the\ MIT\ License\ (below)\ or\ the\ Perl}}
+\DoxyCodeLine{00006\ \textcolor{comment}{\ *\ license.}}
+\DoxyCodeLine{00007\ \textcolor{comment}{\ *}}
+\DoxyCodeLine{00008\ \textcolor{comment}{\ *\ Permission\ is\ hereby\ granted,\ free\ of\ charge,\ to\ any\ person\ obtaining\ a\ copy}}
+\DoxyCodeLine{00009\ \textcolor{comment}{\ *\ of\ this\ software\ and\ associated\ documentation\ files\ (the\ "{}Software"{}),\ to}}
+\DoxyCodeLine{00010\ \textcolor{comment}{\ *\ deal\ in\ the\ Software\ without\ restriction,\ including\ without\ limitation\ the}}
+\DoxyCodeLine{00011\ \textcolor{comment}{\ *\ rights\ to\ use,\ copy,\ modify,\ merge,\ publish,\ distribute,\ sublicense,\ and/or}}
+\DoxyCodeLine{00012\ \textcolor{comment}{\ *\ sell\ copies\ of\ the\ Software,\ and\ to\ permit\ persons\ to\ whom\ the\ Software\ is}}
+\DoxyCodeLine{00013\ \textcolor{comment}{\ *\ furnished\ to\ do\ so,\ subject\ to\ the\ following\ conditions:}}
+\DoxyCodeLine{00014\ \textcolor{comment}{\ *}}
+\DoxyCodeLine{00015\ \textcolor{comment}{\ *\ The\ above\ copyright\ notice\ and\ this\ permission\ notice\ shall\ be\ included\ in}}
+\DoxyCodeLine{00016\ \textcolor{comment}{\ *\ all\ copies\ or\ substantial\ portions\ of\ the\ Software.}}
+\DoxyCodeLine{00017\ \textcolor{comment}{\ *}}
+\DoxyCodeLine{00018\ \textcolor{comment}{\ *\ THE\ SOFTWARE\ IS\ PROVIDED\ "{}AS\ IS"{},\ WITHOUT\ WARRANTY\ OF\ ANY\ KIND,\ EXPRESS\ OR}}
+\DoxyCodeLine{00019\ \textcolor{comment}{\ *\ IMPLIED,\ INCLUDING\ BUT\ NOT\ LIMITED\ TO\ THE\ WARRANTIES\ OF\ MERCHANTABILITY,}}
+\DoxyCodeLine{00020\ \textcolor{comment}{\ *\ FITNESS\ FOR\ A\ PARTICULAR\ PURPOSE\ AND\ NONINFRINGEMENT.\ IN\ NO\ EVENT\ SHALL\ THE}}
+\DoxyCodeLine{00021\ \textcolor{comment}{\ *\ AUTHORS\ OR\ COPYRIGHT\ HOLDERS\ BE\ LIABLE\ FOR\ ANY\ CLAIM,\ DAMAGES\ OR\ OTHER}}
+\DoxyCodeLine{00022\ \textcolor{comment}{\ *\ LIABILITY,\ WHETHER\ IN\ AN\ ACTION\ OF\ CONTRACT,\ TORT\ OR\ OTHERWISE,\ ARISING}}
+\DoxyCodeLine{00023\ \textcolor{comment}{\ *\ FROM,\ OUT\ OF\ OR\ IN\ CONNECTION\ WITH\ THE\ SOFTWARE\ OR\ THE\ USE\ OR\ OTHER\ DEALINGS}}
+\DoxyCodeLine{00024\ \textcolor{comment}{\ *\ IN\ THE\ SOFTWARE.}}
+\DoxyCodeLine{00025\ \textcolor{comment}{\ */}}
+\DoxyCodeLine{00026\ }
+\DoxyCodeLine{00027\ \textcolor{preprocessor}{\#ifndef\ picohttpparser\_h}}
+\DoxyCodeLine{00028\ \textcolor{preprocessor}{\#define\ picohttpparser\_h}}
+\DoxyCodeLine{00029\ }
+\DoxyCodeLine{00030\ \textcolor{preprocessor}{\#include\ <stdint.h>}}
+\DoxyCodeLine{00031\ \textcolor{preprocessor}{\#include\ <sys/types.h>}}
+\DoxyCodeLine{00032\ }
+\DoxyCodeLine{00033\ \textcolor{preprocessor}{\#ifdef\ \_MSC\_VER}}
+\DoxyCodeLine{00034\ \textcolor{preprocessor}{\#define\ ssize\_t\ intptr\_t}}
+\DoxyCodeLine{00035\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00036\ }
+\DoxyCodeLine{00037\ \textcolor{preprocessor}{\#ifdef\ \_\_cplusplus}}
+\DoxyCodeLine{00038\ \textcolor{keyword}{extern}\ \textcolor{stringliteral}{"{}C"{}}\ \{}
+\DoxyCodeLine{00039\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00040\ }
+\DoxyCodeLine{00041\ \textcolor{comment}{/*\ contains\ name\ and\ value\ of\ a\ header\ (name\ ==\ NULL\ if\ is\ a\ continuing\ line}}
+\DoxyCodeLine{00042\ \textcolor{comment}{\ *\ of\ a\ multiline\ header\ */}}
+\DoxyCodeLine{00043\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{structphr__header}{phr\_header}}\ \{}
+\DoxyCodeLine{00044\ \ \ \ \ \textcolor{keyword}{const}\ \textcolor{keywordtype}{char}\ *name;}
+\DoxyCodeLine{00045\ \ \ \ \ \textcolor{keywordtype}{size\_t}\ name\_len;}
+\DoxyCodeLine{00046\ \ \ \ \ \textcolor{keyword}{const}\ \textcolor{keywordtype}{char}\ *value;}
+\DoxyCodeLine{00047\ \ \ \ \ \textcolor{keywordtype}{size\_t}\ value\_len;}
+\DoxyCodeLine{00048\ \};}
+\DoxyCodeLine{00049\ }
+\DoxyCodeLine{00050\ \textcolor{comment}{/*\ returns\ number\ of\ bytes\ consumed\ if\ successful,\ -\/2\ if\ request\ is\ partial,}}
+\DoxyCodeLine{00051\ \textcolor{comment}{\ *\ -\/1\ if\ failed\ */}}
+\DoxyCodeLine{00052\ \textcolor{keywordtype}{int}\ phr\_parse\_request(\textcolor{keyword}{const}\ \textcolor{keywordtype}{char}\ *buf,\ \textcolor{keywordtype}{size\_t}\ len,\ \textcolor{keyword}{const}\ \textcolor{keywordtype}{char}\ **method,\ \textcolor{keywordtype}{size\_t}\ *method\_len,\ \textcolor{keyword}{const}\ \textcolor{keywordtype}{char}\ **path,\ \textcolor{keywordtype}{size\_t}\ *path\_len,}
+\DoxyCodeLine{00053\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ *minor\_version,\ \textcolor{keyword}{struct}\ \mbox{\hyperlink{structphr__header}{phr\_header}}\ *headers,\ \textcolor{keywordtype}{size\_t}\ *num\_headers,\ \textcolor{keywordtype}{size\_t}\ last\_len);}
+\DoxyCodeLine{00054\ }
+\DoxyCodeLine{00055\ \textcolor{comment}{/*\ ditto\ */}}
+\DoxyCodeLine{00056\ \textcolor{keywordtype}{int}\ phr\_parse\_response(\textcolor{keyword}{const}\ \textcolor{keywordtype}{char}\ *\_buf,\ \textcolor{keywordtype}{size\_t}\ len,\ \textcolor{keywordtype}{int}\ *minor\_version,\ \textcolor{keywordtype}{int}\ *status,\ \textcolor{keyword}{const}\ \textcolor{keywordtype}{char}\ **msg,\ \textcolor{keywordtype}{size\_t}\ *msg\_len,}
+\DoxyCodeLine{00057\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{struct}\ \mbox{\hyperlink{structphr__header}{phr\_header}}\ *headers,\ \textcolor{keywordtype}{size\_t}\ *num\_headers,\ \textcolor{keywordtype}{size\_t}\ last\_len);}
+\DoxyCodeLine{00058\ }
+\DoxyCodeLine{00059\ \textcolor{comment}{/*\ ditto\ */}}
+\DoxyCodeLine{00060\ \textcolor{keywordtype}{int}\ phr\_parse\_headers(\textcolor{keyword}{const}\ \textcolor{keywordtype}{char}\ *buf,\ \textcolor{keywordtype}{size\_t}\ len,\ \textcolor{keyword}{struct}\ \mbox{\hyperlink{structphr__header}{phr\_header}}\ *headers,\ \textcolor{keywordtype}{size\_t}\ *num\_headers,\ \textcolor{keywordtype}{size\_t}\ last\_len);}
+\DoxyCodeLine{00061\ }
+\DoxyCodeLine{00062\ \textcolor{comment}{/*\ should\ be\ zero-\/filled\ before\ start\ */}}
+\DoxyCodeLine{00063\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{structphr__chunked__decoder}{phr\_chunked\_decoder}}\ \{}
+\DoxyCodeLine{00064\ \ \ \ \ \textcolor{keywordtype}{size\_t}\ bytes\_left\_in\_chunk;\ \textcolor{comment}{/*\ number\ of\ bytes\ left\ in\ current\ chunk\ */}}
+\DoxyCodeLine{00065\ \ \ \ \ \textcolor{keywordtype}{char}\ consume\_trailer;\ \ \ \ \ \ \ \textcolor{comment}{/*\ if\ trailing\ headers\ should\ be\ consumed\ */}}
+\DoxyCodeLine{00066\ \ \ \ \ \textcolor{keywordtype}{char}\ \_hex\_count;}
+\DoxyCodeLine{00067\ \ \ \ \ \textcolor{keywordtype}{char}\ \_state;}
+\DoxyCodeLine{00068\ \ \ \ \ uint64\_t\ \_total\_read;}
+\DoxyCodeLine{00069\ \ \ \ \ uint64\_t\ \_total\_overhead;}
+\DoxyCodeLine{00070\ \};}
+\DoxyCodeLine{00071\ }
+\DoxyCodeLine{00072\ \textcolor{comment}{/*\ the\ function\ rewrites\ the\ buffer\ given\ as\ (buf,\ bufsz)\ removing\ the\ chunked-\/}}
+\DoxyCodeLine{00073\ \textcolor{comment}{\ *\ encoding\ headers.\ \ When\ the\ function\ returns\ without\ an\ error,\ bufsz\ is}}
+\DoxyCodeLine{00074\ \textcolor{comment}{\ *\ updated\ to\ the\ length\ of\ the\ decoded\ data\ available.\ \ Applications\ should}}
+\DoxyCodeLine{00075\ \textcolor{comment}{\ *\ repeatedly\ call\ the\ function\ while\ it\ returns\ -\/2\ (incomplete)\ every\ time}}
+\DoxyCodeLine{00076\ \textcolor{comment}{\ *\ supplying\ newly\ arrived\ data.\ \ If\ the\ end\ of\ the\ chunked-\/encoded\ data\ is}}
+\DoxyCodeLine{00077\ \textcolor{comment}{\ *\ found,\ the\ function\ returns\ a\ non-\/negative\ number\ indicating\ the\ number\ of}}
+\DoxyCodeLine{00078\ \textcolor{comment}{\ *\ octets\ left\ undecoded,\ that\ starts\ from\ the\ offset\ returned\ by\ \`{}*bufsz`.}}
+\DoxyCodeLine{00079\ \textcolor{comment}{\ *\ Returns\ -\/1\ on\ error.}}
+\DoxyCodeLine{00080\ \textcolor{comment}{\ */}}
+\DoxyCodeLine{00081\ ssize\_t\ phr\_decode\_chunked(\textcolor{keyword}{struct}\ \mbox{\hyperlink{structphr__chunked__decoder}{phr\_chunked\_decoder}}\ *decoder,\ \textcolor{keywordtype}{char}\ *buf,\ \textcolor{keywordtype}{size\_t}\ *bufsz);}
+\DoxyCodeLine{00082\ }
+\DoxyCodeLine{00083\ \textcolor{comment}{/*\ returns\ if\ the\ chunked\ decoder\ is\ in\ middle\ of\ chunked\ data\ */}}
+\DoxyCodeLine{00084\ \textcolor{keywordtype}{int}\ phr\_decode\_chunked\_is\_in\_data(\textcolor{keyword}{struct}\ \mbox{\hyperlink{structphr__chunked__decoder}{phr\_chunked\_decoder}}\ *decoder);}
+\DoxyCodeLine{00085\ }
+\DoxyCodeLine{00086\ \textcolor{preprocessor}{\#ifdef\ \_\_cplusplus}}
+\DoxyCodeLine{00087\ \}}
+\DoxyCodeLine{00088\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00089\ }
+\DoxyCodeLine{00090\ \textcolor{preprocessor}{\#endif}}
+
+\end{DoxyCode}

@@ -1,0 +1,110 @@
+\chapter{HTTP1.0 Proxy}
+\hypertarget{md_README}{}\label{md_README}\index{HTTP1.0 Proxy@{HTTP1.0 Proxy}}
+\label{md_README_autotoc_md0}%
+\Hypertarget{md_README_autotoc_md0}%
+ \hypertarget{md_README_autotoc_md1}{}\doxysection{\texorpdfstring{Исользование}{Исользование}}\label{md_README_autotoc_md1}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{➜\ \ http-\/proxy\ git:(v0.1)\ ✗\ ./build/http\_proxy\ -\/-\/help}
+\DoxyCodeLine{hello\ world!}
+\DoxyCodeLine{\ \ \ \ \ \ \ \ -\/-\/help\ -\/\ вывод\ сообщения\ о\ том\ как\ запускать\ прокси,\ возможных\ флагах\ и\ их\ описания}
+\DoxyCodeLine{\ \ \ \ \ \ \ \ -\/-\/port\ порт,\ на\ котором\ слушает\ прокси.\ По\ умолчанию\ 8080}
+\DoxyCodeLine{\ \ \ \ \ \ \ \ -\/-\/max-\/client-\/threads\ -\/\ максимальное\ кол-\/во\ работающих\ потоков}
+\DoxyCodeLine{\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (размер\ пула\ клиентских\ подключений).\ \ По\ умолчанию\ 4}
+\DoxyCodeLine{\ \ \ \ \ \ \ \ -\/-\/cache-\/ttl\ -\/\ время\ жизни\ кэш\ записи}
+\DoxyCodeLine{\ \ \ \ \ \ \ \ -\/-\/cache-\/size\ -\/\ максимальный\ размер\ кэша}
+
+\end{DoxyCode}
+\hypertarget{md_README_autotoc_md2}{}\doxysection{\texorpdfstring{Запуск}{Запуск}}\label{md_README_autotoc_md2}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{cmake\ -\/S\ .\ -\/B\ build\ \&\&\ cmake\ -\/-\/build\ build}
+\DoxyCodeLine{./build/http\_proxy}
+
+\end{DoxyCode}
+\hypertarget{md_README_autotoc_md3}{}\doxysection{\texorpdfstring{Запуск через docker}{Запуск через docker}}\label{md_README_autotoc_md3}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{docker-\/compose\ up\ -\/-\/build}
+
+\end{DoxyCode}
+\hypertarget{md_README_autotoc_md4}{}\doxysection{\texorpdfstring{Тестирование}{Тестирование}}\label{md_README_autotoc_md4}
+
+\begin{DoxyItemize}
+\item[\DoxyChecked] sequential
+\item[\DoxyUnchecked] concurrent-\/batches
+\end{DoxyItemize}
+\begin{DoxyItemize}
+\item[\DoxyChecked] cache-\/invalidation
+\item[\DoxyUnchecked] parallel-\/clients
+\end{DoxyItemize}
+\begin{DoxyItemize}
+\item[\DoxyChecked] incremental-\/interrupt
+\end{DoxyItemize}
+
+0. Собирите проект в директорию {\ttfamily build}
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{cmake\ -\/S\ .\ -\/B\ build\ \ \&\&\ cmake\ -\/-\/build\ buildc}
+
+\end{DoxyCode}
+
+
+
+\begin{DoxyEnumerate}
+\item Запустите прокси на 9000 порту
+\end{DoxyEnumerate}
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{./http\_proxy\ -\/-\/port\ 9000}
+
+\end{DoxyCode}
+
+
+
+\begin{DoxyEnumerate}
+\item Параллельно запустите {\ttfamily ctest}
+\end{DoxyEnumerate}
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{ctest\ -\/-\/output-\/on-\/failure\ -\/-\/test-\/dir\ ./build}
+
+\end{DoxyCode}
+\hypertarget{md_README_autotoc_md5}{}\doxysection{\texorpdfstring{TODO}{TODO}}\label{md_README_autotoc_md5}
+\hypertarget{md_README_autotoc_md6}{}\doxysubsection{\texorpdfstring{Thread Pool \& Cache}{Thread Pool \& Cache}}\label{md_README_autotoc_md6}
+
+\begin{DoxyItemize}
+\item[\DoxyChecked] Функционал кэша
+\end{DoxyItemize}
+\begin{DoxyItemize}
+\item[\DoxyChecked] Инвалидация кэша
+\item[\DoxyUnchecked] Частичная загрузка файла в кэш
+\end{DoxyItemize}\hypertarget{md_README_autotoc_md7}{}\doxysubsection{\texorpdfstring{Функционал}{Функционал}}\label{md_README_autotoc_md7}
+
+\begin{DoxyItemize}
+\item[\DoxyChecked] Обычные HTML страницы
+\end{DoxyItemize}
+\begin{DoxyItemize}
+\item[\DoxyChecked] Файлы
+\item[\DoxyUnchecked] redirect
+\end{DoxyItemize}\hypertarget{md_README_autotoc_md8}{}\doxysubsection{\texorpdfstring{HTTP Методы}{HTTP Методы}}\label{md_README_autotoc_md8}
+
+\begin{DoxyItemize}
+\item[\DoxyChecked] GET
+\item[\DoxyUnchecked] POST
+\end{DoxyItemize}
+\begin{DoxyItemize}
+\item[\DoxyUnchecked] PUT
+\end{DoxyItemize}
+\begin{DoxyItemize}
+\item[\DoxyUnchecked] UPDATE
+\end{DoxyItemize}
+\begin{DoxyItemize}
+\item[\DoxyUnchecked] DELETE
+\end{DoxyItemize}
+\begin{DoxyItemize}
+\item[\DoxyUnchecked] PATCH 
+\end{DoxyItemize}

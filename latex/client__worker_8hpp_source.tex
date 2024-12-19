@@ -1,0 +1,55 @@
+\doxysection{client\+\_\+worker.\+hpp}
+\hypertarget{client__worker_8hpp_source}{}\label{client__worker_8hpp_source}\index{src/proxy/include/client\_worker.hpp@{src/proxy/include/client\_worker.hpp}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ }
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ <condition\_variable>}}
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#include\ <mutex>}}
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#include\ <queue>}}
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#include\ <stdexcept>}}
+\DoxyCodeLine{00007\ \textcolor{preprocessor}{\#include\ <vector>}}
+\DoxyCodeLine{00008\ }
+\DoxyCodeLine{00009\ \textcolor{preprocessor}{\#include\ <spdlog/spdlog.h>}}
+\DoxyCodeLine{00010\ \textcolor{preprocessor}{\#include\ <sys/epoll.h>}}
+\DoxyCodeLine{00011\ }
+\DoxyCodeLine{00012\ \textcolor{preprocessor}{\#include\ "{}cache.hpp"{}}}
+\DoxyCodeLine{00013\ \textcolor{preprocessor}{\#include\ "{}task.hpp"{}}}
+\DoxyCodeLine{00014\ }
+\DoxyCodeLine{00018\ \textcolor{keyword}{class\ }\mbox{\hyperlink{classclient__worker}{client\_worker}}\ :\ \textcolor{keyword}{public}\ \mbox{\hyperlink{classworker__iface}{worker\_iface}}\ \{}
+\DoxyCodeLine{00019\ \textcolor{keyword}{private}:}
+\DoxyCodeLine{00020\ \ \ \ \ \textcolor{keywordtype}{bool}\ m\_worker\_is\_running\ =\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00022\ \ \ \ \ \textcolor{keywordtype}{int}\ m\_epoll\_fd\ =\ -\/1;}
+\DoxyCodeLine{00023\ \ \ \ \ std::vector<epoll\_event>\ m\_events;}
+\DoxyCodeLine{00024\ \ \ \ \ std::queue<int>\ m\_fds;}
+\DoxyCodeLine{00025\ \ \ \ \ std::mutex\ m\_lock;}
+\DoxyCodeLine{00026\ }
+\DoxyCodeLine{00027\ \ \ \ \ std::condition\_variable\ m\_toggled\_cond;}
+\DoxyCodeLine{00028\ \ \ \ \ std::mutex\ m\_toggle\_lock;}
+\DoxyCodeLine{00029\ }
+\DoxyCodeLine{00030\ \ \ \ \ \mbox{\hyperlink{classlru__cache__t}{lru\_cache\_t<std::string>}}\ *m\_cache;}
+\DoxyCodeLine{00031\ }
+\DoxyCodeLine{00032\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00033\ \ \ \ \ \textcolor{keyword}{explicit}\ \mbox{\hyperlink{classclient__worker}{client\_worker}}(}
+\DoxyCodeLine{00034\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classlru__cache__t}{lru\_cache\_t<std::string>}}\ *cache,}
+\DoxyCodeLine{00035\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ std::vector<epoll\_event>\ \&events,}
+\DoxyCodeLine{00036\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ epoll\_fd}
+\DoxyCodeLine{00037\ \ \ \ \ )}
+\DoxyCodeLine{00038\ \ \ \ \ \ \ \ \ :\ m\_epoll\_fd(epoll\_fd),\ m\_events(events),\ m\_cache(cache)\ \{\ \}}
+\DoxyCodeLine{00039\ }
+\DoxyCodeLine{00040\ \ \ \ \ \textcolor{keywordtype}{void}\ process\_client\_fd(\textcolor{keywordtype}{int}\ client\_fd)\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00041\ }
+\DoxyCodeLine{00042\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classclient__worker_aee98c927bea2ae010908ebff0b892b3e}{start}}()\ \textcolor{keyword}{override};}
+\DoxyCodeLine{00043\ }
+\DoxyCodeLine{00044\ \ \ \ \ \textcolor{keywordtype}{void}\ stop()\ \textcolor{keyword}{override};}
+\DoxyCodeLine{00045\ }
+\DoxyCodeLine{00049\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classclient__worker_a1cd4bb4cdcb3a7d10fa3ecb6fb971b85}{add\_task}}(\textcolor{keywordtype}{int}\ fd)\ \textcolor{keyword}{override};}
+\DoxyCodeLine{00050\ }
+\DoxyCodeLine{00054\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classclient__worker_ab8ca7dfeb5c80296b83af2b4ed5b72ca}{toggle\_task}}(\textcolor{keywordtype}{int}\ fd)\ \textcolor{keyword}{override};}
+\DoxyCodeLine{00055\ }
+\DoxyCodeLine{00056\ \ \ \ \ \textcolor{keyword}{virtual}\ \mbox{\hyperlink{classclient__worker}{\string~client\_worker}}()\ =\ \textcolor{keywordflow}{default};}
+\DoxyCodeLine{00057\ \};}
+\DoxyCodeLine{00058\ }
+\DoxyCodeLine{00062\ \textcolor{keywordtype}{void}\ *start\_client\_worker\_routine(\textcolor{keywordtype}{void}\ *arg);}
+
+\end{DoxyCode}

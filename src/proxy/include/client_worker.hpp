@@ -9,6 +9,7 @@
 #include <sys/epoll.h>
 
 #include "cache.hpp"
+#include "proxy_cache.hpp"
 #include "task.hpp"
 
 /*!
@@ -26,13 +27,11 @@ private:
     std::condition_variable m_toggled_cond;
     std::mutex m_toggle_lock;
 
-    lru_cache_t<std::string> *m_cache;
+    cache_t *m_cache;
 
 public:
     explicit client_worker(
-        lru_cache_t<std::string> *cache,
-        const std::vector<epoll_event> &events,
-        int epoll_fd
+        cache_t *cache, const std::vector<epoll_event> &events, int epoll_fd
     )
         : m_epoll_fd(epoll_fd), m_events(events), m_cache(cache) { }
 

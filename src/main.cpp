@@ -5,10 +5,10 @@
 #include <spdlog/spdlog-inl.h>
 #include <spdlog/spdlog.h>
 
-#include "cache.hpp"
 #include "config.hpp"
 #include "const.hpp"
 #include "proxy.hpp"
+#include "proxy_cache.hpp"
 
 
 void sigpipe_handler(int _unused) {
@@ -33,10 +33,7 @@ int main(int argc, char *argv[]) {
         std::cout << USAGE_MESSAGE;
         return 0;
     }
-    auto cache =
-        std::make_shared<lru_cache_t<std::string>>(conf.cache_size, conf.ttl);
-
-    spdlog::trace("client threads = {}", conf.max_client_threads);
+    auto cache = std::make_shared<cache_t>(conf.cache_size, conf.ttl);
 
     proxy_inst = new http_proxy_t(
         cache.get(), conf.proxy_port, static_cast<int>(conf.max_client_threads)

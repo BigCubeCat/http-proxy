@@ -1,0 +1,33 @@
+\doxysection{thread\+\_\+pool\+\_\+t Class Reference}
+\hypertarget{classthread__pool__t}{}\label{classthread__pool__t}\index{thread\_pool\_t@{thread\_pool\_t}}
+
+
+{\ttfamily \#include $<$thread\+\_\+pool.\+hpp$>$}
+
+\doxysubsubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\Hypertarget{classthread__pool__t_a0bb616162d4ef50b7bed4463d23b7938}\label{classthread__pool__t_a0bb616162d4ef50b7bed4463d23b7938} 
+{\bfseries thread\+\_\+pool\+\_\+t} (std\+::vector$<$ std\+::shared\+\_\+ptr$<$ \mbox{\hyperlink{classworker__iface}{worker\+\_\+iface}} $>$ $>$ tasks)
+\item 
+\Hypertarget{classthread__pool__t_a1d9b3a58f9f56e6935ae85d2e63877f7}\label{classthread__pool__t_a1d9b3a58f9f56e6935ae85d2e63877f7} 
+void {\bfseries run} (const std\+::function$<$ void \texorpdfstring{$\ast$}{*}(void \texorpdfstring{$\ast$}{*})$>$ \&start\+\_\+routine)
+\begin{DoxyCompactList}\small\item\em Запускает потоки \end{DoxyCompactList}\item 
+\Hypertarget{classthread__pool__t_a629e7ea91c49dff96322129ea07306fb}\label{classthread__pool__t_a629e7ea91c49dff96322129ea07306fb} 
+void {\bfseries stop} ()
+\item 
+\Hypertarget{classthread__pool__t_a9c6e2ab374828684f5d34c4463a32ee5}\label{classthread__pool__t_a9c6e2ab374828684f5d34c4463a32ee5} 
+void {\bfseries add\+\_\+task} (int fd)
+\begin{DoxyCompactList}\small\item\em Добавляет файловый дискриптор в обработку \end{DoxyCompactList}\item 
+\Hypertarget{classthread__pool__t_aa5ff6b7cf5f8d94290da17806939b64c}\label{classthread__pool__t_aa5ff6b7cf5f8d94290da17806939b64c} 
+void {\bfseries notify} (int fd)
+\begin{DoxyCompactList}\small\item\em Сообщет пулу потоков об активности дескриптора \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+\doxylink{classthread__pool__t}{thread\+\_\+pool\+\_\+t} Реализация пула потоков. Распределяет задачи между потоками по алгоритму round-\/robin При инициализации принимает вектор указателей на интерфейс таски и число потоков 
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+src/thread\+\_\+pool/include/thread\+\_\+pool.\+hpp\item 
+src/thread\+\_\+pool/src/thread\+\_\+pool.\+cpp\end{DoxyCompactItemize}

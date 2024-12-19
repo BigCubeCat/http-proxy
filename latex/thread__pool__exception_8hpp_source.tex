@@ -1,0 +1,23 @@
+\doxysection{thread\+\_\+pool\+\_\+exception.\+hpp}
+\hypertarget{thread__pool__exception_8hpp_source}{}\label{thread__pool__exception_8hpp_source}\index{src/exceptions/pool/thread\_pool\_exception.hpp@{src/exceptions/pool/thread\_pool\_exception.hpp}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ }
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ <exception>}}
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#include\ <string>}}
+\DoxyCodeLine{00005\ }
+\DoxyCodeLine{00006\ \textcolor{keyword}{class\ }\mbox{\hyperlink{classthread__pool__exception}{thread\_pool\_exception}}\ :\ \textcolor{keyword}{public}\ std::exception\ \{}
+\DoxyCodeLine{00007\ \textcolor{keyword}{private}:}
+\DoxyCodeLine{00008\ \ \ \ \ std::string\ m\_message;}
+\DoxyCodeLine{00009\ }
+\DoxyCodeLine{00010\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00011\ \ \ \ \ \textcolor{keyword}{explicit}\ \mbox{\hyperlink{classthread__pool__exception}{thread\_pool\_exception}}(\textcolor{keyword}{const}\ std::string\ \&msg)}
+\DoxyCodeLine{00012\ \ \ \ \ \ \ \ \ :\ m\_message(\textcolor{stringliteral}{"{}thread\ pool:\ "{}}\ +\ msg)\ \{\ \};}
+\DoxyCodeLine{00013\ }
+\DoxyCodeLine{00014\ \ \ \ \ [[nodiscard]]\ \textcolor{keyword}{const}\ \textcolor{keywordtype}{char}\ *what()\ \textcolor{keyword}{const}\ \textcolor{keyword}{noexcept}\ \textcolor{keyword}{override}\ \{}
+\DoxyCodeLine{00015\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ m\_message.c\_str();}
+\DoxyCodeLine{00016\ \ \ \ \ \};}
+\DoxyCodeLine{00017\ \};}
+
+\end{DoxyCode}

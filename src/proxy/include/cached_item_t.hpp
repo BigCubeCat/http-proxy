@@ -9,7 +9,10 @@
  */
 class cached_item_t {
 private:
-    std::string m_request;
+    bool m_finished = false;
+    /* \brief url */
+    std::string m_url;
+    /* \brief Результат */
     std::string m_response;
 
     std::shared_mutex m_lock;

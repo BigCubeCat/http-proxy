@@ -7,10 +7,10 @@
 #include <sys/socket.h>
 
 #include "const.hpp"
+#include "forward.hpp"
 #include "network.hpp"
 #include "parser.hpp"
 #include "status_check.hpp"
-#include "utils.hpp"
 
 
 void *start_client_worker_routine(void *arg) {
@@ -59,7 +59,7 @@ void client_worker::process_client_fd(int client_fd) const {
     }
     std::array<char, BUFFER_SIZE> buffer {};
     auto bytes_read = read(client_fd, buffer.data(), BUFFER_SIZE);
-    if (bytes_read <= 0) {
+    if (bytes_read < 0) {
         warn_status(close(client_fd), "end connection");
         auto err_st = epoll_ctl(m_epoll_fd, EPOLL_CTL_DEL, client_fd, nullptr);
         warn_status(err_st, "epoll_ctl DEL");
@@ -72,18 +72,17 @@ void client_worker::process_client_fd(int client_fd) const {
         warn_status(close(client_fd), "close");
         return;
     }
-
     if (method == "GET") {
         spdlog::trace("GET method");
         std::string response;
-        auto value = m_cache->get(url);
-        if (value == std::nullopt) {
-            response = forward_request(host, buffer.data());
-            m_cache->set(url, response);
-        }
-        else {
-            response = value.value();
-        }
+        response = forward_request(host, buffer.data());
+        // auto value = m_cache->get(url);
+        // if (value == std::nullopt) {
+        // m_cache->set(url, response);
+        // }
+        // else {
+        //     response = value.value();
+        // }
         if (!response.empty()) {
             if (!send_all(client_fd, response)) {
                 spdlog::error("cant send");
