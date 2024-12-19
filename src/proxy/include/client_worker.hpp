@@ -3,7 +3,6 @@
 #include <condition_variable>
 #include <mutex>
 #include <queue>
-#include <stdexcept>
 #include <vector>
 
 #include <spdlog/spdlog.h>

@@ -7,24 +7,13 @@
 
 #include "cache.hpp"
 #include "config.hpp"
+#include "const.hpp"
 #include "proxy.hpp"
 
 
 void sigpipe_handler(int _unused) {
     spdlog::warn("SIGPIPE recieved");
 }
-
-
-const std::string USAGE_MESSAGE =
-    "\t--help - вывод сообщения о том как запускать прокси, возможных флагах и "
-    "их описания\n"
-    "\t--port порт, на котором слушает прокси. По умолчанию 8080\n"
-    "\t--max-client-threads - максимальное кол-во работающих "
-    "потоков\n\t\t(размер "
-    "пула клиентских подключений).  По умолчанию 4\n"
-    "\t--cache-ttl - время жизни кэш записи\n"
-    "\t--cache-size - максимальный размер кэша\n";
-
 
 http_proxy_t *proxy_inst;
 

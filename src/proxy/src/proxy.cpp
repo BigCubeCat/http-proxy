@@ -19,8 +19,8 @@
 
 #include "client_worker.hpp"
 #include "const.hpp"
+#include "status_check.hpp"
 #include "thread_pool.hpp"
-#include "utils.hpp"
 
 #include "proxy/proxy_runtime_exception.hpp"
 
@@ -89,32 +89,18 @@ void http_proxy_t::run() {
         int nfds = epoll_wait(
             m_epoll_fd, m_events.data(), MAX_EVENTS, EPOLL_WAIT_TIMEOUT
         );
-        spdlog::info("nfds = {}", nfds);
-        spdlog::trace("after epoll_wait");
         if (!m_is_running) {
             break;
         }
         if (nfds < 0) {
-            if (errno == EINTR) {
-                // epoll был прерван сигналом
-                spdlog::info("signal EINTR");
-                continue;
-            }
-            spdlog::error("epoll wait failed");
             break;
         }
-        spdlog::debug("request {}", nfds);
 
         for (int i = 0; i < nfds; ++i) {
             spdlog::trace("обработка {} из {}", i, nfds);
             int fd = m_events[i].data.fd;
             spdlog::debug("fd = {}", fd);
-            if (m_events[i].data.fd == m_exit_fd) {
-                spdlog::warn("EXITING");
-                m_is_running = false;
-                m_pool->stop();
-                break;
-            }
+
             if (m_events[i].data.fd == m_listen_fd) {
                 spdlog::trace("серверный дескриптор");
                 auto client_fd = accept_client();
@@ -130,7 +116,7 @@ void http_proxy_t::run() {
             }
         }
     }
-    hs(close(m_listen_fd), "error on close listen fd");
+    warn_status(close(m_listen_fd), "error on close listen fd");
     m_pool->stop();
 }
 
@@ -157,7 +143,9 @@ int http_proxy_t::accept_client() const {
     epoll_event ev {};
     ev.events  = EPOLLIN | EPOLLET;
     ev.data.fd = client_fd;
-    hs(epoll_ctl(m_epoll_fd, EPOLL_CTL_ADD, client_fd, &ev), "epoll_ctl ADD");
+    warn_status(
+        epoll_ctl(m_epoll_fd, EPOLL_CTL_ADD, client_fd, &ev), "epoll_ctl ADD"
+    );
     return client_fd;
 }
 
@@ -177,14 +165,16 @@ void http_proxy_t::add_exit_fd() {
     m_exit_fd = eventfd(0, 0);
     if (m_exit_fd == -1) {
         spdlog::error("create exit_fd failed");
-        hs(close(m_epoll_fd), "close error");
+        warn_status(close(m_epoll_fd), "close error");
         return;
     }
     spdlog::info("exit_fd = {}", m_exit_fd);
     epoll_event event = {};
     event.events      = EPOLLIN | EPOLLET;
     event.data.fd     = m_exit_fd;
-    hs(epoll_ctl(m_epoll_fd, EPOLL_CTL_ADD, m_exit_fd, &event),
-       "cant register exit_fd");
+    warn_status(
+        epoll_ctl(m_epoll_fd, EPOLL_CTL_ADD, m_exit_fd, &event),
+        "cant register exit_fd"
+    );
     m_events[m_exit_fd] = event;
 }

@@ -15,7 +15,9 @@
 #include <sys/socket.h>
 
 #include "const.hpp"
+#include "network.hpp"
 #include "parser.hpp"
+#include "status_check.hpp"
 
 /*!
  * \brief Отправка запроса на целевой сервер
@@ -28,46 +30,37 @@ forward_request(const std::string &host, const std::string &request) {
         return "";
     }
 
-    struct sockaddr_in server_addr {};
-    int sock = socket(AF_INET, SOCK_STREAM, 0);
-    if (sock < 0) {
-        spdlog::error("Socket creation failed");
-        return "";
-    }
-
+    sockaddr_in server_addr {};
     server_addr.sin_family = AF_INET;
-    server_addr.sin_port   = htons(80);    // HTTP порт
-    if (inet_pton(AF_INET, ip_address.c_str(), &server_addr.sin_addr) <= 0) {
-        spdlog::error("inet_pton");
-        close(sock);
+    server_addr.sin_port   = htons(80);
+    int sock               = socket(AF_INET, SOCK_STREAM, 0);
+    if (!error_status(sock, "socket create failed")) {
+        return "";
+    }
+    auto inet_st =
+        inet_pton(AF_INET, ip_address.c_str(), &server_addr.sin_addr);
+    if (!error_status(inet_st, "inet pton error")) {
+        warn_status(close(sock), "close");
         return "";
     }
 
-    if (connect(sock, (struct sockaddr *)&server_addr, sizeof(server_addr))
-        < 0) {
-        spdlog::error("Connection to server failed");
-        close(sock);
+    auto conn_st = connect(
+        sock, reinterpret_cast<sockaddr *>(&server_addr), sizeof(server_addr)
+    );
+    warn_status(conn_st, "connection to server failed");
+    if (conn_st < 0) {
+        debug_status(close(sock), "close socket failed");
         return "";
     }
 
-    hs(static_cast<int>(send(sock, request.c_str(), request.size(), 0)),
-       "send in forward");
+    debug_status(
+        send(sock, request.c_str(), request.size(), 0), "send request"
+    );
 
-    std::array<char, BUFFER_SIZE> buffer {};
     std::ostringstream response;
-    ssize_t bytes_read = recv(sock, buffer.data(), BUFFER_SIZE, 0);
-    spdlog::trace("bytes_read = {}", bytes_read);
-    while (bytes_read > 0) {
-        response.write(buffer.data(), bytes_read);
-        bytes_read = recv(sock, buffer.data(), BUFFER_SIZE, 0);
-    }
-    hs(close(sock), "close error");
-    spdlog::warn("response size = {}", response.str().size());
-    return response.str();
-}
+    recv_all(sock, response);
 
-void hs(int status, const std::string &msg) {
-    if (status != 0) {
-        spdlog::warn("{}: {}", msg, status);
-    }
+    debug_status(close(sock), "close error");
+
+    return response.str();
 }

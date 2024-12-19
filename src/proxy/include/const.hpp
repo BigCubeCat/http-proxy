@@ -3,11 +3,10 @@
 #include <string>
 
 // Максимальное количество клиентов
-constexpr int MAX_EVENTS         = 10000;
+constexpr int MAX_EVENTS         = 4096;
 constexpr int BUFFER_SIZE        = 256;
 constexpr int CACHE_TTL          = 300;    // Время жизни кеша в секундах
-constexpr int EPOLL_WAIT_TIMEOUT = -1;
-constexpr int EXIT_FD            = -777;
+constexpr int EPOLL_WAIT_TIMEOUT = 100;
 
 const std::string USAGE_MESSAGE =
     "\t--help - вывод сообщения о том как запускать прокси, возможных флагах и "
