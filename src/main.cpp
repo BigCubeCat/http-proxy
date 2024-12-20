@@ -23,11 +23,11 @@ void sigint_handler(int status) {
     spdlog::info("exiting");
     proxy_inst->stop(status);
     sleep(2);
-    // delete proxy_inst;
 }
 
 int main(int argc, char *argv[]) {
-    spdlog::set_level(spdlog::level::trace);
+    spdlog::set_pattern("[%^%l%$] %v");
+    spdlog::set_level(spdlog::level::info);
 
     std::signal(SIGPIPE, sigpipe_handler);
 
