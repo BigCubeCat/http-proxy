@@ -3,7 +3,10 @@
 #include <cstddef>
 #include <cstdint>
 
+#include <spdlog/spdlog.h>
+
 struct proxy_config_t {
+    explicit proxy_config_t() = default;
     /*! порт, на котором слушает прокси. По умолчанию 8080
      */
     uint16_t proxy_port = 8080;
@@ -24,6 +27,8 @@ struct proxy_config_t {
      * Максимальный размер кэша
      */
     size_t cache_size = 10000;
+
+    spdlog::level::level_enum logging_level = spdlog::level::info;
 };
 
 proxy_config_t load_config(int argc, char **argv);

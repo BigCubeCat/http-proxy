@@ -27,7 +27,6 @@ void sigint_handler(int status) {
 
 int main(int argc, char *argv[]) {
     spdlog::set_pattern("[%^%l%$] %v");
-    spdlog::set_level(spdlog::level::info);
 
     std::signal(SIGPIPE, sigpipe_handler);
 
@@ -36,6 +35,7 @@ int main(int argc, char *argv[]) {
         std::cout << USAGE_MESSAGE;
         return 0;
     }
+    spdlog::set_level(conf.logging_level);
     auto cache = std::make_shared<cache_t>(conf.cache_size, conf.ttl);
 
     proxy_inst = std::make_shared<http_proxy_t>(

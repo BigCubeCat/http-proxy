@@ -16,4 +16,5 @@ const std::string USAGE_MESSAGE =
     "потоков\n\t\t(размер "
     "пула клиентских подключений).  По умолчанию 4\n"
     "\t--cache-ttl - время жизни кэш записи\n"
+    "\t--log-level - уровень логирования (error | info | debug | trace)\n"
     "\t--cache-size - максимальный размер кэша\n";
