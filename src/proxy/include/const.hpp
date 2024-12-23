@@ -4,7 +4,7 @@
 
 // Максимальное количество клиентов
 constexpr int MAX_EVENTS         = 4096;
-constexpr int BUFFER_SIZE        = 2560;
+constexpr int BUFFER_SIZE        = 256;
 constexpr int CACHE_TTL          = 300;    // Время жизни кеша в секундах
 constexpr int EPOLL_WAIT_TIMEOUT = 100;
 

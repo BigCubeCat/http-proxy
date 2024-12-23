@@ -38,14 +38,16 @@ bool send_all(int socket, const std::string &data) {
     return true;
 }
 
-void recv_all(int socket, std::ostringstream &response) {
+std::string recv_all(int socket) {
+    std::ostringstream response;
     std::array<char, BUFFER_SIZE> recv_buffer {};
     ssize_t bytes_read = recv(socket, recv_buffer.data(), BUFFER_SIZE, 0);
-    spdlog::trace("bytes_read = {}", bytes_read);
     while (bytes_read > 0) {
+        spdlog::trace("bytes_read = {}", bytes_read);
         response.write(recv_buffer.data(), bytes_read);
         bytes_read = recv(socket, recv_buffer.data(), BUFFER_SIZE, 0);
     }
+    return response.str();
 }
 
 void set_not_blocking(int fd) {

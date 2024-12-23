@@ -1,14 +1,12 @@
 #include "client_worker.hpp"
 
 #include <csignal>
-#include <mutex>
 
 #include <arpa/inet.h>
 #include <spdlog/spdlog.h>
 #include <sys/socket.h>
 
 #include "const.hpp"
-#include "forward.hpp"
 #include "network.hpp"
 #include "parser.hpp"
 #include "status_check.hpp"
@@ -92,15 +90,10 @@ std::string client_worker::process_get(
     const std::string &url,
     const std::string &request
 ) {
-    spdlog::trace("GET method");
-
+    spdlog::debug("GET method");
     auto cached_value = m_cache->get(url);
     if (cached_value != std::nullopt) {
-        const auto &value = cached_value.value();
-        // дополнительная проверка, чтобы перестраховаться
-        if (value->is_finished()) {
-            return value->data();
-        }
+        return cached_value.value();
     }
     spdlog::debug("not in cache");
     std::string ip_address;
@@ -133,17 +126,9 @@ std::string client_worker::process_get(
     debug_status(
         send(sock_fd, request.c_str(), request.size(), 0), "send request"
     );
-
-    std::ostringstream stream;
-    recv_all(sock_fd, stream);
+    auto response = recv_all(sock_fd);
     debug_status(close(sock_fd), "close error");
-    auto response    = stream.str();
-    auto cache_value = std::make_shared<cached_item_t>();
-    cache_value->lock_for_write();
-    cache_value->push(response);
-    cache_value->finish();
-    cache_value->unlock_for_write();
-    m_cache->set(url, cache_value);
+    m_cache->set(url, response);
     return response;
 }
 
