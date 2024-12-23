@@ -29,13 +29,21 @@ private:
 
     cache_t *m_cache;
 
+    void process_client_fd(int client_fd);
+
+    std::string process_get(
+        int client_fd,
+        const std::string &host,
+        const std::string &url,
+        const std::string &request
+    );
+
+
 public:
     explicit client_worker(
         cache_t *cache, const std::vector<epoll_event> &events, int epoll_fd
     )
         : m_epoll_fd(epoll_fd), m_events(events), m_cache(cache) { }
-
-    void process_client_fd(int client_fd) const;
 
     void start() override;
 

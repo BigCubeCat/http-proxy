@@ -1,5 +1,3 @@
-#include "forward.hpp"
-
 #include <cstring>
 #include <sstream>
 #include <string>
@@ -42,6 +40,7 @@ forward_request(const std::string &host, const std::string &request) {
         warn_status(close(sock), "close");
         return "";
     }
+
     auto conn_st = connect(
         sock, reinterpret_cast<sockaddr *>(&server_addr), sizeof(server_addr)
     );

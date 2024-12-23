@@ -9,14 +9,25 @@
  */
 class cached_item_t {
 private:
-    bool m_finished = false;
-    /* \brief url */
-    std::string m_url;
-    /* \brief Результат */
-    std::string m_response;
+    std::shared_mutex m_mutex;
 
-    std::shared_mutex m_lock;
+    bool m_valid    = true;
+    bool m_finished = false;
+    /*! \brief Результат */
+    std::string m_data;
 
 public:
-    explicit cached_item_t();
+    explicit cached_item_t() = default;
+
+    [[nodiscard]] bool is_finished();
+
+    std::string data();
+
+    void push(const std::string &appendix);
+
+    void finish();
+
+    void lock_for_write();
+
+    void unlock_for_write();
 };

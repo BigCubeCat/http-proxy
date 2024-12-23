@@ -22,6 +22,7 @@ std::shared_ptr<http_proxy_t> proxy_inst;
 void sigint_handler(int status) {
     spdlog::info("exiting");
     proxy_inst->stop(status);
+    std::cout << "terminating\n";
     sleep(2);
 }
 
