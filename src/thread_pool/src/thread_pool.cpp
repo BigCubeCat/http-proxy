@@ -1,5 +1,6 @@
 #include "thread_pool.hpp"
 
+#include <csignal>
 #include <cstddef>
 #include <thread>
 
@@ -22,6 +23,11 @@ void thread_pool_t::run(const std::function<void *(void *)> &start_routine) {
         // start_routine должна запускать соответствующий метод в tasks
         m_threads[i] = std::thread(start_routine, m_tasks[i].get());
         m_threads[i].detach();
+    }
+}
+void thread_pool_t::stop() {
+    for (const auto &task : m_tasks) {
+        task->stop();
     }
 }
 

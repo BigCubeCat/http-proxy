@@ -10,20 +10,21 @@
 #include <unistd.h>
 
 #include <arpa/inet.h>
+#include <asm-generic/socket.h>
 #include <netinet/in.h>
 #include <spdlog/spdlog.h>
 #include <sys/epoll.h>
+#include <sys/eventfd.h>
 #include <sys/socket.h>
 
+#include "client_worker.hpp"
 #include "const.hpp"
+#include "network.hpp"
+#include "status_check.hpp"
 #include "thread_pool.hpp"
-#include "utils.hpp"
 
-#include "proxy/proxy_runtime_exception.hpp"
 
-http_proxy_t::http_proxy_t(
-    lru_cache_t<std::string> *cache, int port, int count_threads
-)
+http_proxy_t::http_proxy_t(cache_t *cache, int port, int count_threads)
     : m_port(port),
       m_events(MAX_EVENTS),
       m_count_workers(count_threads),
@@ -31,33 +32,20 @@ http_proxy_t::http_proxy_t(
       m_cache(cache) { }
 
 void http_proxy_t::run() {
-    m_listen_fd = socket(AF_INET, SOCK_STREAM, 0);
-    if (m_listen_fd < 0) {
-        spdlog::critical("socket creation failed");
+    m_is_running = true;
+    m_listen_fd  = socket(AF_INET, SOCK_STREAM, 0);
+    if (!error_status(m_listen_fd, "socket create failed")) {
         return;
     }
-    sockaddr_in server_addr {};
-    server_addr.sin_family      = AF_INET;
-    server_addr.sin_addr.s_addr = INADDR_ANY;
-    server_addr.sin_port        = htons(m_port);
-    auto bind_status            = bind(
-        m_listen_fd,
-        reinterpret_cast<sockaddr *>(&server_addr),
-        sizeof(server_addr)
-    );
-    if (bind_status < 0) {
-        spdlog::critical("bind failed");
+    if (!error_status(bind_socket(m_listen_fd, m_port), "bind failed")) {
         return;
     }
-    if (listen(m_listen_fd, SOMAXCONN) < 0) {
-        spdlog::critical("listen failed");
+    if (!error_status(listen(m_listen_fd, SOMAXCONN), "listen failed")) {
         return;
     }
     set_not_blocking(m_listen_fd);
-
     m_epoll_fd = epoll_create1(0);
-    if (m_epoll_fd < 0) {
-        spdlog::critical("epoll creation failed");
+    if (!error_status(m_epoll_fd, "epoll_create1 failed")) {
         return;
     }
     epoll_event ev {};
@@ -67,7 +55,6 @@ void http_proxy_t::run() {
         spdlog::critical("epoll_ctl failed");
         return;
     }
-
     spdlog::info("count workers {}", m_count_workers);
     m_workers.resize(m_count_workers);
     for (int i = 0; i < m_count_workers; ++i) {
@@ -77,22 +64,20 @@ void http_proxy_t::run() {
     }
     m_pool = std::make_shared<thread_pool_t>(m_workers);
     m_pool->run(start_client_worker_routine);
-
-    while (true) {
-        int nfds = epoll_wait(m_epoll_fd, m_events.data(), MAX_EVENTS, -1);
-        if (nfds < 0) {
-            spdlog::error("epoll wait failed");
-            return;
+    int nfds;
+    while (m_is_running) {
+        nfds = epoll_wait(
+            m_epoll_fd, m_events.data(), MAX_EVENTS, EPOLL_WAIT_TIMEOUT
+        );
+        if (nfds < 0 || !m_is_running) {
+            break;
         }
-        spdlog::debug("request {}", nfds);
-
         for (int i = 0; i < nfds; ++i) {
             spdlog::trace("обработка {} из {}", i, nfds);
             if (m_events[i].data.fd == m_listen_fd) {
                 spdlog::trace("серверный дескриптор");
                 auto client_fd = accept_client();
-                if (client_fd <= 0) {
-                    spdlog::error("failed to accept client");
+                if (!error_status(client_fd, "failed to accept client")) {
                     continue;
                 }
                 m_pool->add_task(client_fd);
@@ -103,32 +88,23 @@ void http_proxy_t::run() {
             }
         }
     }
-    close(m_listen_fd);
-}
-
-void http_proxy_t::set_not_blocking(int fd) {
-    int flags = fcntl(fd, F_GETFL, 0);
-    if (flags == -1) {
-        spdlog::critical("fcntl F_GETFL");
-        throw proxy_runtime_exception("fcntl F_GETFL", -1);
-    }
-    flags = fcntl(fd, F_SETFL, flags | O_NONBLOCK);
-    if (flags == -1) {
-        spdlog::critical("fcntl F_SETFL");
-        throw proxy_runtime_exception("fcntl F_SETFL", -1);
-    }
+    warn_status(close(m_listen_fd), "error on close listen fd");
+    m_pool->stop();
 }
 
 int http_proxy_t::accept_client() const {
     auto client_fd = accept(m_listen_fd, nullptr, nullptr);
-    if (client_fd < 0) {
-        spdlog::warn("accept failed");
+    if (!error_status(client_fd, "accept failed")) {
         return -1;
     }
     set_not_blocking(client_fd);
-    epoll_event ev {};
-    ev.events  = EPOLLIN | EPOLLET;
-    ev.data.fd = client_fd;
-    hs(epoll_ctl(m_epoll_fd, EPOLL_CTL_ADD, client_fd, &ev), "epoll_ctl ADD");
+    register_fd(m_epoll_fd, client_fd);
     return client_fd;
+}
+
+void http_proxy_t::stop(int status) {
+    spdlog::debug("exiting with status {}", status);
+    m_is_running = false;
+    m_pool->stop();
+    spdlog::trace("stop");
 }

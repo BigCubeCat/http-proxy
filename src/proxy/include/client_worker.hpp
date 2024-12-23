@@ -3,13 +3,12 @@
 #include <condition_variable>
 #include <mutex>
 #include <queue>
-#include <stdexcept>
 #include <vector>
 
 #include <spdlog/spdlog.h>
 #include <sys/epoll.h>
 
-#include "cache.hpp"
+#include "proxy_cache.hpp"
 #include "task.hpp"
 
 /*!
@@ -17,6 +16,7 @@
  */
 class client_worker : public worker_iface {
 private:
+    bool m_worker_is_running = true;
     /// Файловый дискриптор, из proxy
     int m_epoll_fd = -1;
     std::vector<epoll_event> m_events;
@@ -26,19 +26,27 @@ private:
     std::condition_variable m_toggled_cond;
     std::mutex m_toggle_lock;
 
-    lru_cache_t<std::string> *m_cache;
+    cache_t *m_cache;
+
+    void process_client_fd(int client_fd);
+
+    std::string process_get(
+        int client_fd,
+        const std::string &host,
+        const std::string &url,
+        const std::string &request
+    );
+
 
 public:
     explicit client_worker(
-        lru_cache_t<std::string> *cache,
-        const std::vector<epoll_event> &events,
-        int epoll_fd
+        cache_t *cache, const std::vector<epoll_event> &events, int epoll_fd
     )
         : m_epoll_fd(epoll_fd), m_events(events), m_cache(cache) { }
 
-    void process_client_fd(int client_fd) const;
-
     void start() override;
+
+    void stop() override;
 
     /*!
      * Добавить файловый регистр на выполнение операции

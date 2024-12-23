@@ -60,6 +60,15 @@ proxy_config_t load_config(int argc, char **argv) {
     if (size != "") {
         config.cache_size = std::atoi(size.c_str());
     }
+    auto log_level = get_arg(arguments, "--log-level");
+    if (log_level != "") {
+        if (log_level == "error")
+            config.logging_level = spdlog::level::err;
+        else if (log_level == "debug")
+            config.logging_level = spdlog::level::debug;
+        else if (log_level == "trace")
+            config.logging_level = spdlog::level::trace;
+    }
     return config;
 }
 

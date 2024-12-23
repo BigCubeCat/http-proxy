@@ -61,22 +61,24 @@ public:
      * std::nullopt
      */
     std::optional<T> get(const std::string &key) {
+        m_lock.lock_shared();
         spdlog::debug("tring to get {}", key);
-        shared_lock lock(m_lock);
         auto it = m_hash_map.find(key);
         if (it == m_hash_map.end()) {
+            m_lock.unlock_shared();
             return std::nullopt;
         }
         spdlog::debug(
             "check expired {} {}", it->second.second.created, current_unixtime
         );
         if (is_expired(it->second.second.created)) {
+            m_lock.unlock_shared();
             return std::nullopt;
         }
-        lock.unlock();
-        unique_lock ulock(m_lock);
+        m_lock.unlock_shared();
+        m_lock.lock();
         touch(it);
-        ulock.unlock();
+        m_lock.unlock();
         return it->second.first;
     }
 
@@ -87,23 +89,15 @@ public:
      * добавляет новую запись.
      */
     void set(const std::string &key, T element) {
+        m_lock.lock();
         spdlog::debug("tring to set {}", key);
-        unique_lock lock(m_lock);
-        auto it = m_hash_map.find(key);
-        if (it != m_hash_map.end()) {
-            // если сущетвует - обновить использование
-            // ЭТО НЕВЕРНО, НАДО ОБНОВИТЬ element
-            touch(it);
+        while (m_usage_list.size() >= m_size) {
+            delete_least_used_element();
         }
-        else {
-            while (m_usage_list.size() >= m_size) {
-                delete_least_used_element();
-            }
-            m_usage_list.emplace_front(key);
-        }
+        m_usage_list.emplace_front(key);
         m_hash_map[key] = {
             element, { current_unixtime, current_unixtime }
         };
-        lock.unlock();
+        m_lock.unlock();
     }
 };
