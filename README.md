@@ -1,9 +1,17 @@
 # HTTP1.0 Proxy
 
+## Сборка
+
+Для сборки необходим spdlog и gtest.
+
+```bash
+cmake -S . -B build && cmake --build build
+```
+
 ## Исользование
 
 ```bash
-➜  http-proxy git:(v0.1) ✗ ./build/http_proxy --help
+./build/http_proxy --help
 hello world!
         --help - вывод сообщения о том как запускать прокси, возможных флагах и их описания
         --port порт, на котором слушает прокси. По умолчанию 8080
@@ -16,37 +24,23 @@ hello world!
 ## Запуск
 
 ```bash
-cmake -S . -B build && cmake --build build
 ./build/http_proxy
-```
-
-## Запуск через docker
-
-```bash
-docker-compose up --build
 ```
 
 ## Тестирование
 
+для некоторых тестов необходим docker compose
+
+- [ ] basic
 - [x] sequential
-- [ ] concurrent-batches
+- [x] concurrent-batches
 - [x] cache-invalidation
 - [ ] parallel-clients
 - [x] incremental-interrupt
 
-0. Собирите проект в директорию `build`
-
-```bash
-cmake -S . -B build  && cmake --build buildc
-```
-
-1. Запустите прокси на 9000 порту
-
-```bash
-./http_proxy --port 9000
-```
-
-2. Параллельно запустите `ctest`
+0. (Собирите)[#Сборка] проект в директорию `build`
+1. Запустите прокси (на порту 9000)[#Использование]
+2. Параллельно запустите `ctest` (можно использовать, например, tmux)
 
 ```bash
 ctest --output-on-failure --test-dir ./build
@@ -54,23 +48,10 @@ ctest --output-on-failure --test-dir ./build
 
 ## TODO
 
-### Thread Pool & Cache
-
 - [x] Функционал кэша
 - [x] Инвалидация кэша
-- [ ] Частичная загрузка файла в кэш
-
-### Функционал
-
 - [x] Обычные HTML страницы
 - [x] Файлы
 - [ ] redirect
-
-### HTTP Методы
-
-- [x] GET
-- [ ] POST
-- [ ] PUT
-- [ ] UPDATE
-- [ ] DELETE
-- [ ] PATCH
+- [ ] unbind port
+- [ ] оптимизация

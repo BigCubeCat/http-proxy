@@ -57,7 +57,7 @@ bool parse_request(
 bool resolve_host(const std::string &host, std::string &ip_address) {
     struct addrinfo hints {};
     struct addrinfo *res;
-    hints.ai_family   = AF_INET;    // IPv4
+    hints.ai_family   = AF_INET;
     hints.ai_socktype = SOCK_STREAM;
     if (getaddrinfo(host.c_str(), nullptr, &hints, &res) != 0) {
         spdlog::error("getaddrinfo");
@@ -66,7 +66,7 @@ bool resolve_host(const std::string &host, std::string &ip_address) {
     std::array<char, INET_ADDRSTRLEN> ip {};
     if (inet_ntop(
             AF_INET,
-            &((struct sockaddr_in *)res->ai_addr)->sin_addr,
+            &((sockaddr_in *)res->ai_addr)->sin_addr,
             ip.data(),
             INET_ADDRSTRLEN
         )

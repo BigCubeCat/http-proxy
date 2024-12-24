@@ -95,34 +95,11 @@ std::string client_worker::process_get(
     if (cached_value != std::nullopt) {
         return cached_value.value();
     }
-    spdlog::debug("not in cache");
-    std::string ip_address;
-    if (!resolve_host(host, ip_address)) {
-        spdlog::error("failed to resolve host: {}", host);
+    auto sock_fd = open_http_socket(host);
+    if (sock_fd < 0) {
         return "";
     }
 
-    sockaddr_in server_addr {};
-    server_addr.sin_family = AF_INET;
-    server_addr.sin_port   = htons(80);
-    int sock_fd            = socket(AF_INET, SOCK_STREAM, 0);
-    if (!error_status(sock_fd, "socket create failed")) {
-        return "";
-    }
-    auto inet_st =
-        inet_pton(AF_INET, ip_address.c_str(), &server_addr.sin_addr);
-    if (!error_status(inet_st, "inet pton error")) {
-        warn_status(close(sock_fd), "close");
-        return "";
-    }
-    auto conn_st = connect(
-        sock_fd, reinterpret_cast<sockaddr *>(&server_addr), sizeof(server_addr)
-    );
-    warn_status(conn_st, "connection to server failed");
-    if (conn_st < 0) {
-        debug_status(close(sock_fd), "close socket failed");
-        return "";
-    }
     debug_status(
         send(sock_fd, request.c_str(), request.size(), 0), "send request"
     );
