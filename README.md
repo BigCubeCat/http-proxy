@@ -53,5 +53,4 @@ ctest --output-on-failure --test-dir ./build
 - [x] Обычные HTML страницы
 - [x] Файлы
 - [ ] redirect
-- [ ] unbind port
 - [ ] оптимизация

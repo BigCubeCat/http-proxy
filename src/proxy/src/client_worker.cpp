@@ -10,6 +10,7 @@
 #include "network.hpp"
 #include "parser.hpp"
 #include "status_check.hpp"
+#include "utils.hpp"
 
 
 void *start_client_worker_routine(void *arg) {
@@ -67,6 +68,7 @@ void client_worker::process_client_fd(int client_fd) {
     std::string method;
     std::string url;
     std::string host;
+    spdlog::warn("req = {}", buffer.data());
     if (!parse_request(buffer.data(), bytes_read, method, url, host)) {
         warn_status(close(client_fd), "close");
         return;
@@ -99,13 +101,22 @@ std::string client_worker::process_get(
     if (sock_fd < 0) {
         return "";
     }
-
     debug_status(
         send(sock_fd, request.c_str(), request.size(), 0), "send request"
     );
+    int status;
+    std::unordered_map<std::string, std::string> headers_map;
+
     auto response = recv_all(sock_fd);
-    spdlog::trace("response = {}", response);
+    parse_http_header(response, headers_map, status);
+
+    spdlog::debug("status={}", status);
+    for (auto &k : headers_map) {
+        spdlog::debug("{} = {}", k.first, k.second);
+    }
     debug_status(close(sock_fd), "close error");
+    if (status / 100 == 3) {    // Moved
+    }
     m_cache->set(url, response);
     return response;
 }
