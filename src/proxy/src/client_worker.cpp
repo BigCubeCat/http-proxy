@@ -104,6 +104,7 @@ std::string client_worker::process_get(
         send(sock_fd, request.c_str(), request.size(), 0), "send request"
     );
     auto response = recv_all(sock_fd);
+    spdlog::trace("response = {}", response);
     debug_status(close(sock_fd), "close error");
     m_cache->set(url, response);
     return response;

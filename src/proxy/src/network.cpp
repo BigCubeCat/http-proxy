@@ -84,14 +84,15 @@ bool register_fd(int epoll_fd, int fd) {
 
 int open_http_socket(const std::string &host) {
     std::string ip_address;
-    if (!resolve_host(host, ip_address)) {
+    int port;
+    if (!resolve_host(host, ip_address, port)) {
         spdlog::error("failed to resolve host: {}", host);
         return -1;
     }
 
     sockaddr_in server_addr {};
     server_addr.sin_family = AF_INET;
-    server_addr.sin_port   = htons(80);
+    server_addr.sin_port   = htons(port);
     int sock_fd            = socket(AF_INET, SOCK_STREAM, 0);
     if (!error_status(sock_fd, "socket create failed")) {
         return -1;

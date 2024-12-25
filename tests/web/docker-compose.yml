@@ -16,19 +16,3 @@ services:
       context: ./site3
     ports:
       - "8083:8080"
-
-  proxy:
-    build:
-      context: ./proxy
-    ports:
-      - "9000:9000"
-
-  test_runner:
-    build:
-      context: ./test_runner
-    depends_on:
-      - site1
-      - site2
-      - site3
-    environment:
-      - TEST_TIMEOUT=30

@@ -54,12 +54,31 @@ bool parse_request(
     return true;
 }
 
-bool resolve_host(const std::string &host, std::string &ip_address) {
+bool resolve_host(const std::string &host, std::string &ip_address, int &port) {
+    port = 80;
     struct addrinfo hints {};
     struct addrinfo *res;
     hints.ai_family   = AF_INET;
     hints.ai_socktype = SOCK_STREAM;
-    if (getaddrinfo(host.c_str(), nullptr, &hints, &res) != 0) {
+
+    auto host_string = host;
+
+    if (host.starts_with("localhost") || host.starts_with("127.0.0.1")) {
+        host_string    = "127.0.0.1";
+        auto colon_pos = host.find(':');
+        if (colon_pos != std::string::npos) {
+            std::string port_str = host.substr(colon_pos + 1);
+            try {
+                port = std::stoi(port_str);
+            }
+            catch (const std::exception &) {
+                spdlog::error("{} is not a port", port);
+                return false;
+            }
+        }
+    }
+
+    if (getaddrinfo(host_string.c_str(), nullptr, &hints, &res) != 0) {
         spdlog::error("getaddrinfo");
         return false;
     }
