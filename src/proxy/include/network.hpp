@@ -5,20 +5,6 @@
 #include <netinet/in.h>
 
 /*!
- * \brief Функция для отправки строки по сети
- * \param[in] socket файловый дискриптор
- * \param[in] data данные
- */
-bool send_all(int socket, const std::string &data);
-
-/*!
- * \brief Функция для получения данных из сети
- * \param[in] socket_fd файловый дискриптор
- * \returns полученные данные
- */
-std::string recv_all(int socket_fd);
-
-/*!
  * \brief Переключает файловый дискриптор в неблокирующий режим
  * \param[in] fd файловый дескриптор
  */

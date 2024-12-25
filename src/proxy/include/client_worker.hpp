@@ -30,14 +30,6 @@ private:
 
     void process_client_fd(int client_fd);
 
-    std::string process_get(
-        int client_fd,
-        const std::string &host,
-        const std::string &url,
-        const std::string &request
-    );
-
-
 public:
     explicit client_worker(
         cache_t *cache, const std::vector<epoll_event> &events, int epoll_fd

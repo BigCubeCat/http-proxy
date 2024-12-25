@@ -8,48 +8,10 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 
-#include "const.hpp"
 #include "parser.hpp"
 #include "status_check.hpp"
 
 #include "proxy/proxy_runtime_exception.hpp"
-
-bool send_all(int socket, const std::string &data) {
-    size_t total_bytes_sent = 0;
-    size_t data_size        = data.size();
-
-    spdlog::debug("data size = {}", data_size);
-    size_t bytes_left;
-    ssize_t bytes_sent;
-    while (total_bytes_sent < data_size) {
-        bytes_left = data_size - total_bytes_sent;
-        bytes_sent = send(
-            socket,
-            data.data() + total_bytes_sent,
-            BUFFER_SIZE > bytes_left ? bytes_left : BUFFER_SIZE,
-            0
-        );
-        if (bytes_sent < 0) {
-            spdlog::error("error sending data: {} {}", strerror(errno), errno);
-            return false;
-        }
-        total_bytes_sent += static_cast<size_t>(bytes_sent);
-    }
-    return true;
-}
-
-std::string recv_all(int socket_fd) {
-    std::ostringstream response;
-    std::array<char, BUFFER_SIZE> recv_buffer {};
-    ssize_t bytes_read = recv(socket_fd, recv_buffer.data(), BUFFER_SIZE, 0);
-    spdlog::warn("buff = {}", recv_buffer.data());
-    while (bytes_read > 0) {
-        spdlog::trace("bytes_read = {}", bytes_read);
-        response.write(recv_buffer.data(), bytes_read);
-        bytes_read = recv(socket_fd, recv_buffer.data(), BUFFER_SIZE, 0);
-    }
-    return response.str();
-}
 
 void set_not_blocking(int fd) {
     int flags = fcntl(fd, F_GETFL, SO_REUSEPORT);

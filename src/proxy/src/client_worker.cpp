@@ -6,11 +6,8 @@
 #include <spdlog/spdlog.h>
 #include <sys/socket.h>
 
-#include "const.hpp"
-#include "network.hpp"
-#include "parser.hpp"
+#include "http_response_parser.hpp"
 #include "status_check.hpp"
-#include "utils.hpp"
 
 
 void *start_client_worker_routine(void *arg) {
@@ -54,71 +51,36 @@ void client_worker::stop() {
 }
 
 void client_worker::process_client_fd(int client_fd) {
-    if (client_fd < 0) {
-        return;
-    }
-    std::array<char, BUFFER_SIZE> buffer {};
-    auto bytes_read = read(client_fd, buffer.data(), BUFFER_SIZE);
-    if (bytes_read < 0) {
+    auto terminating_lambda = [](int epoll_fd, int client_fd) {
         warn_status(close(client_fd), "end connection");
-        auto err_st = epoll_ctl(m_epoll_fd, EPOLL_CTL_DEL, client_fd, nullptr);
+        auto err_st = epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, nullptr);
         warn_status(err_st, "epoll_ctl DEL");
+    };
+    if (client_fd < 0) {
+        terminating_lambda(m_epoll_fd, client_fd);
         return;
     }
-    std::string method;
-    std::string url;
-    std::string host;
-    spdlog::warn("req = {}", buffer.data());
-    if (!parse_request(buffer.data(), bytes_read, method, url, host)) {
-        warn_status(close(client_fd), "close");
+    auto client_processor = http_response_processor_t(client_fd);
+    if (!client_processor.parse_client_request()) {
+        terminating_lambda(m_epoll_fd, client_fd);
         return;
     }
-    if (method == "GET") {
-        auto response = process_get(client_fd, host, url, buffer.data());
-        spdlog::debug("response size = {}", response.size());
-        if (!response.empty()) {
-            if (!send_all(client_fd, response)) {
-                spdlog::error("cant send");
-            }
-        }
-    }
-    debug_status(close(client_fd), "close");
-}
-
-
-std::string client_worker::process_get(
-    int client_fd,
-    const std::string &host,
-    const std::string &url,
-    const std::string &request
-) {
-    spdlog::debug("GET method");
-    auto cached_value = m_cache->get(url);
+    auto cached_value = m_cache->get(client_processor.url());
     if (cached_value != std::nullopt) {
-        return cached_value.value();
+        client_processor.set_cached_data(cached_value.value());
+        client_processor.process();
+        terminating_lambda(m_epoll_fd, client_fd);
+        return;
     }
-    auto sock_fd = open_http_socket(host);
-    if (sock_fd < 0) {
-        return "";
+    auto status = client_processor.receive();
+    if (!status) {
+        terminating_lambda(m_epoll_fd, client_fd);
+        return;
     }
-    debug_status(
-        send(sock_fd, request.c_str(), request.size(), 0), "send request"
-    );
-    int status;
-    std::unordered_map<std::string, std::string> headers_map;
-
-    auto response = recv_all(sock_fd);
-    parse_http_header(response, headers_map, status);
-
-    spdlog::debug("status={}", status);
-    for (auto &k : headers_map) {
-        spdlog::debug("{} = {}", k.first, k.second);
+    m_cache->set(client_processor.url(), client_processor.data());
+    if (!client_processor.process()) {
+        spdlog::error("");
     }
-    debug_status(close(sock_fd), "close error");
-    if (status / 100 == 3) {    // Moved
-    }
-    m_cache->set(url, response);
-    return response;
 }
 
 void client_worker::add_task(int fd) { }
