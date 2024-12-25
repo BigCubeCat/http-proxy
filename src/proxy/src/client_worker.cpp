@@ -52,9 +52,11 @@ void client_worker::stop() {
 
 void client_worker::process_client_fd(int client_fd) {
     auto terminating_lambda = [](int epoll_fd, int client_fd) {
-        warn_status(close(client_fd), "end connection");
-        auto err_st = epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, nullptr);
-        warn_status(err_st, "epoll_ctl DEL");
+        debug_status(close(client_fd), "end connection");
+        debug_status(
+            epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, nullptr),
+            "epoll_ctl DEL"
+        );
     };
     if (client_fd < 0) {
         terminating_lambda(m_epoll_fd, client_fd);

@@ -8,6 +8,7 @@
 #include <sys/socket.h>
 
 #include "picohttpparser.h"
+#include "utils.hpp"
 
 bool parse_request(
     const char *buf,
@@ -55,6 +56,9 @@ bool parse_request(
 }
 
 bool resolve_host(const std::string &host, std::string &ip_address, int &port) {
+    if (is_url(host)) {
+        return false;
+    }
     port = 80;
     struct addrinfo hints {};
     struct addrinfo *res;
@@ -63,16 +67,26 @@ bool resolve_host(const std::string &host, std::string &ip_address, int &port) {
 
     auto host_string = host;
 
-    if (host.starts_with("localhost") || host.starts_with("127.0.0.1")) {
+    if (is_localhost_url(host)) {
         host_string    = "127.0.0.1";
-        auto colon_pos = host.find(':');
+        auto colon_pos = host.find(':', 6);    // отступаем 6 символов, чтобы не
+                                               // найти : в http:// или https://
         if (colon_pos != std::string::npos) {
-            std::string port_str = host.substr(colon_pos + 1);
+            std::string port_substring = host.substr(colon_pos + 1);
+            std::string port_str;
+            for (int j = 0; j < 5; ++j) {    // считваем порт. 5 потому что
+                                             // максимальный порт 65535
+                spdlog::info("port_substring[{}] = {}", j, port_substring[j]);
+                if (port_substring[j] < '0' || port_substring[j] > '9') {
+                    break;
+                }
+                port_str += port_substring[j];
+            }
             try {
                 port = std::stoi(port_str);
             }
             catch (const std::exception &) {
-                spdlog::error("{} is not a port", port);
+                spdlog::error("{} is not a port", port_str);
                 return false;
             }
         }

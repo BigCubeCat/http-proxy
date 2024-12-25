@@ -1,7 +1,10 @@
 #include "utils.hpp"
 
+#include <regex>
 #include <sstream>
 
+
+using std::regex;
 
 void parse_http_header(
     const std::string &response,
@@ -29,4 +32,20 @@ void parse_http_header(
             headers[key] = value;
         }
     }
+}
+
+bool is_url(const std::string &possible_url) {
+    static regex url_regex(
+        R"(^https?:\/\/(?:localhost|\b\d{1,3}(\.\d{1,3}){3}\b|(?:[a-zA-Z0-9\-]+\.)+[a-zA-Z]{2,})(:\d+)?(\/[^\s]*)?$)"
+    );
+    return std::regex_match(possible_url, url_regex);
+}
+
+bool is_localhost_url(const std::string &possible_localhost) {
+    auto localhost_pos = possible_localhost.find("localhost");
+    if (localhost_pos != std::string::npos) {
+        return true;
+    }
+    localhost_pos = possible_localhost.find("127.0.0.1");
+    return (localhost_pos != std::string::npos);
 }

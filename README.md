@@ -52,5 +52,5 @@ ctest --output-on-failure --test-dir ./build
 - [x] Инвалидация кэша
 - [x] Обычные HTML страницы
 - [x] Файлы
-- [ ] redirect
+- [x] redirect
 - [ ] оптимизация

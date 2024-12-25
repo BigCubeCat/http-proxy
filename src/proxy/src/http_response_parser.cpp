@@ -17,7 +17,8 @@ bool http_response_processor_t::receive() {
     int sock_fd;
     std::unordered_map<std::string, std::string> headers_map;
 
-    for (int steps = 0; status < 300 && steps < MAXIMUM_MOVE; ++steps) {
+    for (int steps = 0; status < HTTP_ERROR_STATUS && steps < MAXIMUM_MOVE;
+         ++steps) {
         spdlog::info("host = {}", m_host);
         sock_fd = open_http_socket(m_host);
         if (sock_fd < 0) {
@@ -30,10 +31,6 @@ bool http_response_processor_t::receive() {
         );
         recv_all(sock_fd);
         parse_http_header(m_data, headers_map, status);
-        spdlog::debug("status={}", status);
-        for (auto &k : headers_map) {
-            spdlog::debug("{} = {}", k.first, k.second);
-        }
         debug_status(close(sock_fd), "close error");
         if (status / 100 != 3) {
             break;
