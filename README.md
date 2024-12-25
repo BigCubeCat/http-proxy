@@ -31,9 +31,9 @@ hello world!
 
 для некоторых тестов необходим docker compose
 
-- [ ] basic
+- [x] basic
 - [x] sequential
-- [x] concurrent-batches
+- [ ] concurrent-batches
 - [x] cache-invalidation
 - [ ] parallel-clients
 - [x] incremental-interrupt

@@ -76,7 +76,7 @@ bool resolve_host(const std::string &host, std::string &ip_address, int &port) {
             std::string port_str;
             for (int j = 0; j < 5; ++j) {    // считваем порт. 5 потому что
                                              // максимальный порт 65535
-                spdlog::info("port_substring[{}] = {}", j, port_substring[j]);
+                spdlog::trace("port_substring[{}] = {}", j, port_substring[j]);
                 if (port_substring[j] < '0' || port_substring[j] > '9') {
                     break;
                 }

@@ -19,7 +19,7 @@ bool http_response_processor_t::receive() {
 
     for (int steps = 0; status < HTTP_ERROR_STATUS && steps < MAXIMUM_MOVE;
          ++steps) {
-        spdlog::info("host = {}", m_host);
+        spdlog::debug("host = {}", m_host);
         sock_fd = open_http_socket(m_host);
         if (sock_fd < 0) {
             return false;
