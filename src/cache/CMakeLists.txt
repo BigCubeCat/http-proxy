@@ -8,9 +8,9 @@ LANGUAGES CXX
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_FLAGS_RELEASE "-O3")
+set(CMAKE_CXX_FLAGS_RELEASE "-Ofast")
 set(CMAKE_CXX_FLAGS "-g -Ofast -Wall")
-set(CMAKE_C_FLAGS "-g -O3 -Wall")
+set(CMAKE_C_FLAGS "-g -Ofast -Wall")
 
 include_directories(include)
 file(GLOB_RECURSE SOURCES *.cpp)
