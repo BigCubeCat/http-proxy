@@ -1,7 +1,10 @@
 #include "utils.hpp"
 
+#include <csignal>
 #include <regex>
 #include <sstream>
+
+#include "status_check.hpp"
 
 
 using std::regex;
@@ -48,4 +51,14 @@ bool is_localhost_url(const std::string &possible_localhost) {
     }
     localhost_pos = possible_localhost.find("127.0.0.1");
     return (localhost_pos != std::string::npos);
+}
+
+void disable_signals() {
+    sigset_t set;
+    sigemptyset(&set);
+    sigaddset(&set, SIGINT);
+    sigaddset(&set, SIGPIPE);
+    error_status(
+        pthread_sigmask(SIG_BLOCK, &set, nullptr), "pthread_sigmask failed"
+    );
 }

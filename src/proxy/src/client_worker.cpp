@@ -7,7 +7,9 @@
 #include <sys/socket.h>
 
 #include "http_response_parser.hpp"
+#include "network.hpp"
 #include "status_check.hpp"
+#include "utils.hpp"
 
 
 void *start_client_worker_routine(void *arg) {
@@ -16,38 +18,43 @@ void *start_client_worker_routine(void *arg) {
         spdlog::critical("cannot start routine, arg is nullptr");
         throw std::runtime_error("start routine");
     }
+    disable_signals();
     worker->start();
     return nullptr;
 }
 
-void client_worker::toggle_task(int fd) {
-    m_lock.lock();
-    m_fds.push(fd);
-    m_lock.unlock();
-    m_toggled_cond.notify_one();
-}
-
 void client_worker::start() {
-    sigset_t set;
-    sigemptyset(&set);
-    sigaddset(&set, SIGINT);
-    sigaddset(&set, SIGPIPE);
-    pthread_sigmask(SIG_BLOCK, &set, nullptr);
-
-    while (m_worker_is_running) {
-        std::unique_lock<std::mutex> lock(m_toggle_lock);
-        m_toggled_cond.wait(lock, [this]() { return !m_fds.empty(); });
-        int current_client_fd = m_fds.front();
-        m_fds.pop();
-        lock.unlock();
-        process_client_fd(current_client_fd);
-    }
+    run();
     spdlog::debug("worker finished");
 }
 
 void client_worker::stop() {
     m_worker_is_running = false;
-    toggle_task(-1);
+}
+
+void client_worker::run() {
+    int nfds;
+    while (m_worker_is_running) {
+        nfds = m_epoll.select();
+        for (int i = 0; i < nfds; ++i) {
+            if (m_is_root && m_epoll[i].data.fd == m_listen_fd) {
+                // Принимаем новое подклчение, если мы root и если произошло
+                // событие на m_listen_fd
+                auto client_fd = accept_client();
+                if (!error_status(client_fd, "failed to accept client")) {
+                    continue;
+                }
+                // отдаем задачу на перераспределение
+                m_pool->add_task(client_fd);
+                continue;
+            }
+            process_client_fd(m_epoll[i].data.fd);
+        }
+    }
+}
+
+void client_worker::add_task(int fd) {
+    m_epoll.register_fd(fd, EPOLLIN);
 }
 
 void client_worker::process_client_fd(int client_fd) {
@@ -59,24 +66,24 @@ void client_worker::process_client_fd(int client_fd) {
         );
     };
     if (client_fd < 0) {
-        terminating_lambda(m_epoll_fd, client_fd);
+        terminating_lambda(m_epoll.epoll_fd(), client_fd);
         return;
     }
     auto client_processor = http_response_processor_t(client_fd);
     if (!client_processor.parse_client_request()) {
-        terminating_lambda(m_epoll_fd, client_fd);
+        terminating_lambda(m_epoll.epoll_fd(), client_fd);
         return;
     }
     auto cached_value = m_cache->get(client_processor.url());
     if (cached_value != std::nullopt) {
         client_processor.set_cached_data(cached_value.value());
         client_processor.process();
-        terminating_lambda(m_epoll_fd, client_fd);
+        terminating_lambda(m_epoll.epoll_fd(), client_fd);
         return;
     }
     auto status = client_processor.receive();
     if (!status) {
-        terminating_lambda(m_epoll_fd, client_fd);
+        terminating_lambda(m_epoll.epoll_fd(), client_fd);
         return;
     }
     m_cache->set(client_processor.url(), client_processor.data());
@@ -85,4 +92,12 @@ void client_worker::process_client_fd(int client_fd) {
     }
 }
 
-void client_worker::add_task(int fd) { }
+int client_worker::accept_client() {
+    auto client_fd = accept(m_listen_fd, nullptr, nullptr);
+    if (!error_status(client_fd, "accept failed")) {
+        return -1;
+    }
+    set_not_blocking(client_fd);
+    register_fd(m_epoll.epoll_fd(), client_fd);
+    return client_fd;
+}

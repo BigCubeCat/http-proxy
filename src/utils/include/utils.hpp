@@ -20,3 +20,9 @@ bool is_url(const std::string &possible_url);
  * \brief Вернет true, если переданный url является локальным
  */
 bool is_localhost_url(const std::string &possible_localhost);
+
+/*!
+ * \brief Ставит маску сигнала в блокировку всех сигналов
+ * Вызывать эту функцию только в поточной функции
+ */
+void disable_signals();

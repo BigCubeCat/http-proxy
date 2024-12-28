@@ -87,7 +87,8 @@ TEST(ThreadPool, Basic) {
         workers.push_back(std::make_shared<test_worker>(5));
     }
     spdlog::warn("{}", workers[0].get() == nullptr);
-    auto pool = thread_pool_t(workers);
+    auto pool = thread_pool_t(static_cast<int>(workers.size()));
+    pool.set_tasks(workers);
     spdlog::warn("{}", workers[0].get() == nullptr);
     pool.run(test_worker::start_routine);
     std::vector<int> args(static_cast<size_t>(total_tasks * n));

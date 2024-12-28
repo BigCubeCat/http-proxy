@@ -8,8 +8,7 @@
 
 #include "pool/thread_pool_exception.hpp"
 
-thread_pool_t::thread_pool_t(std::vector<std::shared_ptr<worker_iface>> tasks)
-    : m_count_pools(tasks.size()), m_tasks(std::move(tasks)) {
+thread_pool_t::thread_pool_t(int n) : m_count_pools(n) {
     m_threads.resize(m_count_pools);
     spdlog::debug("build thread_pool_t with {} pools", m_count_pools);
 }
@@ -48,6 +47,12 @@ void thread_pool_t::notify(int fd) {
     }
     auto thread_id = thread_index_val->second;
     m_tasks[thread_id]->toggle_task(fd);
+}
+
+
+void thread_pool_t::set_tasks(std::vector<std::shared_ptr<worker_iface>> tasks
+) {
+    m_tasks = std::move(tasks);
 }
 
 thread_pool_t::~thread_pool_t() = default;

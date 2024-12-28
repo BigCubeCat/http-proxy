@@ -18,7 +18,6 @@
 #include <sys/socket.h>
 
 #include "client_worker.hpp"
-#include "const.hpp"
 #include "network.hpp"
 #include "status_check.hpp"
 #include "thread_pool.hpp"
@@ -26,80 +25,34 @@
 
 http_proxy_t::http_proxy_t(cache_t *cache, int port, int count_threads)
     : m_port(port),
-      m_events(MAX_EVENTS),
-      m_count_workers(count_threads),
+      m_count_workers(count_threads - 1),
       m_workers(count_threads),
       m_cache(cache) { }
 
 void http_proxy_t::run() {
-    m_is_running = true;
-    m_listen_fd  = socket(AF_INET, SOCK_STREAM, 0);
-    if (!error_status(m_listen_fd, "socket create failed")) {
+    m_pool        = std::make_shared<thread_pool_t>(m_count_workers + 1);
+    m_is_running  = true;
+    int listen_fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (!init_listen_socket(listen_fd)) {
         return;
     }
-    if (!error_status(bind_socket(m_listen_fd, m_port), "bind failed")) {
-        return;
-    }
-    if (!error_status(listen(m_listen_fd, SOMAXCONN), "listen failed")) {
-        return;
-    }
-    set_not_blocking(m_listen_fd);
-    m_epoll_fd = epoll_create1(0);
-    if (!error_status(m_epoll_fd, "epoll_create1 failed")) {
-        return;
-    }
-    epoll_event ev {};
-    ev.events  = EPOLLIN;
-    ev.data.fd = m_listen_fd;
-    if (epoll_ctl(m_epoll_fd, EPOLL_CTL_ADD, m_listen_fd, &ev) < 0) {
-        spdlog::critical("epoll_ctl failed");
-        return;
-    }
-    spdlog::info("count workers {}", m_count_workers);
-    m_workers.resize(m_count_workers);
-    for (int i = 0; i < m_count_workers; ++i) {
-        m_workers[i] = std::shared_ptr<worker_iface>(
-            std::make_shared<client_worker>(m_cache, m_events, m_epoll_fd)
-        );
-    }
-    m_pool = std::make_shared<thread_pool_t>(m_workers);
-    m_pool->run(start_client_worker_routine);
-    int nfds;
-    while (m_is_running) {
-        nfds = epoll_wait(
-            m_epoll_fd, m_events.data(), MAX_EVENTS, EPOLL_WAIT_TIMEOUT
-        );
-        if (nfds < 0 || !m_is_running) {
-            break;
-        }
-        for (int i = 0; i < nfds; ++i) {
-            spdlog::trace("обработка {} из {}", i, nfds);
-            if (m_events[i].data.fd == m_listen_fd) {
-                spdlog::trace("серверный дескриптор");
-                auto client_fd = accept_client();
-                if (!error_status(client_fd, "failed to accept client")) {
-                    continue;
-                }
-                m_pool->add_task(client_fd);
-            }
-            else {
-                spdlog::trace("клиентский дескриптор");
-                m_pool->notify(m_events[i].data.fd);
-            }
-        }
-    }
-    warn_status(close(m_listen_fd), "error on close listen fd");
-    m_pool->stop();
-}
+    auto root_worker =
+        std::make_shared<client_worker>(m_cache, m_pool.get(), listen_fd);
+    root_worker->add_task(listen_fd);
 
-int http_proxy_t::accept_client() const {
-    auto client_fd = accept(m_listen_fd, nullptr, nullptr);
-    if (!error_status(client_fd, "accept failed")) {
-        return -1;
+    spdlog::info("count workers {}", m_count_workers);
+    m_workers.resize(m_count_workers + 1);
+    m_workers[0] = root_worker;
+    for (int i = 1; i < m_count_workers + 1; ++i) {
+        m_workers[i] = std::shared_ptr<worker_iface>(
+            std::make_shared<client_worker>(m_cache, m_pool.get())
+        );
     }
-    set_not_blocking(client_fd);
-    register_fd(m_epoll_fd, client_fd);
-    return client_fd;
+    m_pool->set_tasks(m_workers);
+    root_worker->start();
+    m_pool->run(start_client_worker_routine);
+
+    warn_status(close(listen_fd), "error on close listen fd");
 }
 
 void http_proxy_t::stop(int status) {
@@ -107,4 +60,24 @@ void http_proxy_t::stop(int status) {
     m_is_running = false;
     m_pool->stop();
     spdlog::trace("stop");
+}
+
+bool http_proxy_t::init_listen_socket(int listen_fd) {
+    if (!error_status(listen_fd, "socket create failed")) {
+        return false;
+    }
+    if (!error_status(bind_socket(listen_fd, m_port), "bind failed")) {
+        return false;
+    }
+    if (!error_status(listen(listen_fd, SOMAXCONN), "listen failed")) {
+        return false;
+    }
+    try {
+        set_not_blocking(listen_fd);
+    }
+    catch (const std::exception &e) {
+        spdlog::critical("{}", e.what());
+        return false;
+    }
+    return true;
 }

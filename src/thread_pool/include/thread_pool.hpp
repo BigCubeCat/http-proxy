@@ -26,7 +26,9 @@ private:
                                                  // in pool]
 
 public:
-    explicit thread_pool_t(std::vector<std::shared_ptr<worker_iface>> tasks);
+    explicit thread_pool_t(int n);
+
+    void set_tasks(std::vector<std::shared_ptr<worker_iface>> tasks);
 
     /*!
      * \brief Запускает потоки
