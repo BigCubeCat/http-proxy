@@ -1,10 +1,12 @@
 #pragma once
 
+#include <map>
+
 #include <spdlog/spdlog.h>
 #include <sys/epoll.h>
 
-#include "epoll_controller.hpp"
-#include "proxy_cache.hpp"
+#include "http_response_parser.hpp"
+#include "selector_controller.hpp"
 #include "task.hpp"
 #include "thread_pool.hpp"
 
@@ -17,11 +19,13 @@ private:
     bool m_worker_is_running = true;
     int m_listen_fd          = -127;
 
-    epoll_controller m_epoll;
+    selector_controller m_epoll;
     thread_pool_t *m_pool;
     cache_t *m_cache;
 
-    void process_client_fd(int client_fd);
+    std::map<int, std::shared_ptr<http_response_processor_t>> m_processor_map;
+
+    void process_client_fd(int client_fd, uint32_t events);
 
     /*!
      * Метод для главного воркера

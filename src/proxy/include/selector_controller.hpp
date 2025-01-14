@@ -10,21 +10,21 @@
  * \brief объект, хранящий в себе данные для epoll
  * хранит дискприптор epoll и позволяет регистрировать новые fd
  */
-class epoll_controller {
+class selector_controller {
 private:
     int m_epoll_fd = -1;
 
     std::vector<epoll_event> m_events;
 
 public:
-    epoll_controller();
-    epoll_controller(const epoll_controller &)            = default;
-    epoll_controller(epoll_controller &&)                 = delete;
-    epoll_controller &operator=(const epoll_controller &) = default;
-    epoll_controller &operator=(epoll_controller &&)      = delete;
-    explicit epoll_controller(std::vector<epoll_event> m_events)
+    selector_controller();
+    selector_controller(const selector_controller &)            = default;
+    selector_controller(selector_controller &&)                 = delete;
+    selector_controller &operator=(const selector_controller &) = default;
+    selector_controller &operator=(selector_controller &&)      = delete;
+    explicit selector_controller(std::vector<epoll_event> m_events)
         : m_events(std::move(m_events)) { }
-    ~epoll_controller();
+    ~selector_controller();
 
     void register_fd(int fd, uint32_t op) noexcept;
 

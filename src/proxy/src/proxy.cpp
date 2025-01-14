@@ -62,7 +62,7 @@ void http_proxy_t::stop(int status) {
     spdlog::trace("stop");
 }
 
-bool http_proxy_t::init_listen_socket(int listen_fd) {
+bool http_proxy_t::init_listen_socket(int listen_fd) const {
     if (!error_status(listen_fd, "socket create failed")) {
         return false;
     }

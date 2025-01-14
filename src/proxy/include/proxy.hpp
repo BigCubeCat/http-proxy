@@ -3,7 +3,7 @@
 
 #include <sys/epoll.h>
 
-#include "proxy_cache.hpp"
+#include "cache.hpp"
 #include "thread_pool.hpp"
 
 /*!
@@ -20,7 +20,7 @@ private:
     cache_t *m_cache;
     std::shared_ptr<thread_pool_t> m_pool;
 
-    bool init_listen_socket(int listen_fd);
+    [[nodiscard]] bool init_listen_socket(int listen_fd) const;
 
 public:
     explicit http_proxy_t(cache_t *cache, int port, int count_threads);

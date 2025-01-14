@@ -10,7 +10,6 @@
 #include "config.hpp"
 #include "const.hpp"
 #include "proxy.hpp"
-#include "proxy_cache.hpp"
 
 
 void sigpipe_handler(int _unused) {

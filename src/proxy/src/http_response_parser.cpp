@@ -8,9 +8,10 @@
 #include "status_check.hpp"
 #include "utils.hpp"
 
+#include "connection/connection_processor.hpp"
 
-http_response_processor_t::http_response_processor_t(int fd)
-    : m_client_fd(fd) { }
+http_response_processor_t::http_response_processor_t(int fd, cache_t *cache_ptr)
+    : m_client_fd(fd), m_cache_ptr(cache_ptr) { }
 
 bool http_response_processor_t::receive() {
     int status = 0;
@@ -46,12 +47,17 @@ bool http_response_processor_t::receive() {
 }
 
 bool http_response_processor_t::process() {
-    if (!m_data.empty()) {
-        if (!send_all()) {
-            spdlog::error("cant send");
+    if (m_stage == parser_stage::READ_STAGE) { }
+    if (m_stage == parser_stage::WRITE_STAGE) {
+        if (!m_data.empty()) {
+            if (!send_all()) {
+                spdlog::error("cant send");
+                debug_status(close(m_client_fd), "close");
+                return false;
+            }
         }
+        debug_status(close(m_client_fd), "close");
     }
-    debug_status(close(m_client_fd), "close");
     return true;
 }
 
@@ -109,4 +115,12 @@ void http_response_processor_t::recv_all(int fd) {
         bytes_read = recv(fd, m_buffer.data(), BUFFER_SIZE, 0);
     }
     m_data = response.str();
+}
+
+parser_stage http_response_processor_t::stage() const {
+    return m_stage;
+}
+
+void http_response_processor_t::switch_stage(const parser_stage &new_stage) {
+    m_stage = new_stage;
 }
