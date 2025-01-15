@@ -17,4 +17,4 @@ add_executable(${PROJECT_NAME} ${TEST_SOURCES})
 
 add_test(NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME})
 
-target_link_libraries(${PROJECT_NAME} PUBLIC cache_lib task_lib proxy_lib thread_pool_lib gtest PRIVATE spdlog::spdlog)
+target_link_libraries(${PROJECT_NAME} PUBLIC context_lib task_lib proxy_lib thread_pool_lib gtest PRIVATE spdlog::spdlog)

@@ -7,8 +7,9 @@
 /*!
  * \brief Переключает файловый дискриптор в неблокирующий режим
  * \param[in] fd файловый дескриптор
+ * \returns Возращает false в случае ошибки
  */
-void set_not_blocking(int fd);
+bool set_not_blocking(int fd);
 
 /*!
  * \brief создание принимающего сокета

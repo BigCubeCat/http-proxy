@@ -11,19 +11,18 @@
 #include "parser.hpp"
 #include "status_check.hpp"
 
-#include "proxy/proxy_runtime_exception.hpp"
-
-void set_not_blocking(int fd) {
+bool set_not_blocking(int fd) {
     int flags = fcntl(fd, F_GETFL, SO_REUSEPORT);
     if (flags == -1) {
         spdlog::critical("fcntl F_GETFL");
-        throw proxy_runtime_exception("fcntl F_GETFL", -1);
+        return false;
     }
     flags = fcntl(fd, F_SETFL, flags | O_NONBLOCK);
     if (flags == -1) {
         spdlog::critical("fcntl F_SETFL");
-        throw proxy_runtime_exception("fcntl F_SETFL", -1);
+        return false;
     }
+    return true;
 }
 
 int bind_socket(int fd, int port) {

@@ -1,12 +1,9 @@
 #pragma once
 
-#include <map>
-
 #include <spdlog/spdlog.h>
 #include <sys/epoll.h>
 
-#include "http_response_parser.hpp"
-#include "selector_controller.hpp"
+#include "proxy_server_t.hpp"
 #include "task.hpp"
 #include "thread_pool.hpp"
 
@@ -19,11 +16,9 @@ private:
     bool m_worker_is_running = true;
     int m_listen_fd          = -127;
 
-    selector_controller m_epoll;
-    thread_pool_t *m_pool;
-    cache_t *m_cache;
+    proxy_server_t m_proxy_inst;
 
-    std::map<int, std::shared_ptr<http_response_processor_t>> m_processor_map;
+    thread_pool_t *m_pool;
 
     void process_client_fd(int client_fd, uint32_t events);
 
@@ -33,20 +28,13 @@ private:
     int accept_client();
 
 public:
-    explicit client_worker(
-        cache_t *cache, thread_pool_t *pool_ptr, int listen_fd
-    )
-        : m_is_root(true),
-          m_listen_fd(listen_fd),
-          m_pool(pool_ptr),
-          m_cache(cache) { }
+    explicit client_worker(thread_pool_t *pool_ptr, int listen_fd)
+        : m_is_root(true), m_listen_fd(listen_fd), m_pool(pool_ptr) { }
 
-    explicit client_worker(cache_t *cache, thread_pool_t *pool_ptr)
-        : m_is_root(false), m_pool(pool_ptr), m_cache(cache) { }
+    explicit client_worker(thread_pool_t *pool_ptr)
+        : m_is_root(false), m_pool(pool_ptr) { }
 
     void start() override;
-
-    void run();
 
     void stop() override;
 

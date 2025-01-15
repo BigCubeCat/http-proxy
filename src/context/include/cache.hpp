@@ -16,14 +16,13 @@ class cache_t {
     std::mutex m_mutex;
 
 public:
-    explicit cache_t();
+    explicit cache_t() = default;
 
     std::pair<std::string, std::shared_ptr<item_t>>
     get_item(const std::string &key) noexcept;
 
     bool
-    try_remove_if_unused(std::pair<std::string, std::shared_ptr<item_t>> &pair
-    );    // return true on removal
+    try_remove_if_unused(std::pair<std::string, std::shared_ptr<item_t>> &pair);
 
     void remove_item(const std::string &key) noexcept;
 };

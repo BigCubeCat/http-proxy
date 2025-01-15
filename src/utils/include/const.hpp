@@ -11,7 +11,8 @@ constexpr int MAXIMUM_MOVE       = 128;
 constexpr int HTTP_ERROR_STATUS  = 400;
 
 const std::string USAGE_MESSAGE =
-    "\t--help - вывод сообщения о том как запускать прокси, возможных флагах и "
+    "\t--help - вывод сообщения о том как запускать прокси, возможных "
+    "флагах и "
     "их описания\n"
     "\t--port порт, на котором слушает прокси. По умолчанию 8080\n"
     "\t--max-client-threads - максимальное кол-во работающих "
