@@ -24,13 +24,14 @@ void sigint_handler(int status) {
     proxy_inst->stop(status);
     std::cout << "terminating\n";
     storage::instance().free();
-    sleep(2);
+    sleep(TERMINATING_DELAY);
 }
 
 int main(int argc, char *argv[]) {
     spdlog::set_pattern("[%^%l%$] %v");
 
     std::signal(SIGPIPE, sigpipe_handler);
+    std::signal(SIGINT, sigint_handler);
 
     auto conf = load_config(argc, argv);
     if (conf.help) {
@@ -45,7 +46,6 @@ int main(int argc, char *argv[]) {
         conf.proxy_port, static_cast<int>(conf.max_client_threads)
     );
 
-    std::signal(SIGINT, sigint_handler);
 
     proxy_inst->run();
 

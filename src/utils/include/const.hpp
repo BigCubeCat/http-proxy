@@ -9,6 +9,7 @@ constexpr int CACHE_TTL          = 300;    // Время жизни кеша в 
 constexpr int EPOLL_WAIT_TIMEOUT = 100;
 constexpr int MAXIMUM_MOVE       = 128;
 constexpr int HTTP_ERROR_STATUS  = 400;
+constexpr int TERMINATING_DELAY  = 2;    // в секундах
 
 const std::string USAGE_MESSAGE =
     "\t--help - вывод сообщения о том как запускать прокси, возможных "
