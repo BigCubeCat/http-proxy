@@ -52,6 +52,7 @@ server_connection_t::server_connection_t(
     int res = connect(m_fd, result->ai_addr, result->ai_addrlen);
     freeaddrinfo(result);
     if (res == 0) {
+        spdlog::debug("stage SEND REQUEST");
         m_stage = SERVER_STAGE_SEND_REQUEST;
         server->add_server_socket(m_fd);
         return;
@@ -97,16 +98,20 @@ bool server_connection_t::check_usage() {
 }
 
 bool server_connection_t::process_output(proxy_server_iface *server) {
+    spdlog::trace("server_connection_t process output");
     if (check_usage()) {
+        spdlog::debug("check_usage = true");
         return true;
     }
 
     if (m_stage == SERVER_STAGE_CONNECT) {
+        spdlog::debug("stage CONNECT");
         sockaddr addr {};
         socklen_t len = sizeof(addr);
         int res       = getpeername(m_fd, &addr, &len);
 
         if (res == 0) {
+            spdlog::debug("stage switched to SEND REQUEST");
             m_stage = SERVER_STAGE_SEND_REQUEST;
         }
         else {
@@ -118,8 +123,10 @@ bool server_connection_t::process_output(proxy_server_iface *server) {
     }
 
     if (m_stage != SERVER_STAGE_SEND_REQUEST) {
+        spdlog::debug("stage != SERVER_STAGE_SEND_REQUEST");
         return false;
     }
+    spdlog::trace("tring to write");
 
     ssize_t res = write(
         m_fd,
@@ -136,6 +143,7 @@ bool server_connection_t::process_output(proxy_server_iface *server) {
 
     if (res == -1) {
         if (errno == EAGAIN) {
+            spdlog::trace("server_connection_t: EAGAIN recv");
             return false;
         }
         throw proxy_runtime_exception(strerror(errno), errno);
@@ -145,6 +153,7 @@ bool server_connection_t::process_output(proxy_server_iface *server) {
 
     if (m_request_offset == m_request_to_send.length()) {
         m_request_to_send.clear();
+        spdlog::debug("stage switched to READ FIRST LINE");
         m_stage = server_stages::SERVER_STAGE_READ_FIRST_LINE;
         server->change_sock_mod(m_fd, EPOLLIN);
     }
@@ -154,6 +163,7 @@ bool server_connection_t::process_output(proxy_server_iface *server) {
 bool server_connection_t::process_input(
     [[maybe_unused]] proxy_server_iface *server
 ) {
+    spdlog::info("srever connection process_input");
     if (check_usage()) {
         return true;
     }

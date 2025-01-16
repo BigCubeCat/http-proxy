@@ -22,27 +22,33 @@ void client_connection_t::change_to_write_stage(proxy_server_iface *server) {
     spdlog::debug("client with sock_fd {} fully parsed request", m_fd);
     auto item = storage::instance().get_item(m_host + m_url);
     if (!item.second->is_started()) {
+        spdlog::trace("item not started");
         bool res = item.second->set_started(true);
         if (!res) {
+            spdlog::trace("create server connection");
             auto *server_connection =
                 new server_connection_t(m_host, m_request, item, server);
+            spdlog::trace("adding new connection");
             server->add_new_connection(
                 server_connection->get_fd(), server_connection
             );
         }
     }
+    spdlog::trace("storage item loaded");
     m_storage_item = item.second;
     server->change_sock_mod(m_fd, EPOLLOUT);
+    spdlog::debug("stage switched to SEND ANSWER");
     m_stage = client_stages::CLIENT_STAGE_SEND_ANSWER;
 }
 
 bool client_connection_t::process_input(
     [[maybe_unused]] proxy_server_iface *server
 ) {
+    spdlog::debug("current stage is {}", static_cast<int>(m_stage));
     if (m_stage == client_stages::CLIENT_STAGE_SEND_ANSWER) {
+        spdlog::debug("stage SEND ANSWER");
         return false;
     }
-
     std::array<char, BUFFER_SIZE> read_buffer {};
     auto res = read(m_fd, read_buffer.data(), BUFFER_SIZE);
     if (res == 0) {
@@ -50,15 +56,19 @@ bool client_connection_t::process_input(
     }
     if (res == -1) {
         if (errno == EAGAIN || errno == EWOULDBLOCK) {
+            spdlog::warn("client_connection_t process input: EAGAIN recv");
             return false;
         }
         throw std::runtime_error(strerror(errno));
     }
 
     m_request.append(read_buffer.data(), res);
+    spdlog::debug("request = {}", m_request);
     if (m_stage == client_stages::CLIENT_STAGE_READ_FIRST_LINE) {
+        spdlog::debug("stage READ FIRST LINE");
         size_t end_line_pos = m_request.find("\r\n");
         if (end_line_pos == std::string::npos) {
+            spdlog::debug("here");
             return false;
         }
         if (m_request.substr(0, 3) != "GET") {
@@ -73,12 +83,14 @@ bool client_connection_t::process_input(
         change_http_version_in_message(
             m_request, last_space_pos + 1, end_line_pos - 1 - last_space_pos
         );
-        m_url                      = m_request.substr(4, last_space_pos - 4);
+        m_url = m_request.substr(4, last_space_pos - 4);
+        spdlog::debug("stage switched to READ HOST");
         m_stage                    = client_stages::CLIENT_STAGE_READ_HOST;
         m_last_unparsed_line_start = end_line_pos + 2;
     }
 
     if (m_stage == client_stages::CLIENT_STAGE_READ_HOST) {
+        spdlog::debug("stage READ HOST");
         while (m_last_unparsed_line_start < m_request.length()) {
             size_t end_line_pos =
                 m_request.find("\r\n", m_last_unparsed_line_start);
@@ -103,6 +115,7 @@ bool client_connection_t::process_input(
             if (line.substr(0, param_end_index) == "Host") {
                 m_host                     = line.substr(param_end_index + 2);
                 m_last_unparsed_line_start = end_line_pos + 2;
+                spdlog::debug("stage switched to READ TILL END");
                 m_stage = client_stages::CLIENT_STAGE_READ_TILL_END;
                 break;
             }
@@ -110,6 +123,7 @@ bool client_connection_t::process_input(
         }
     }
     if (m_stage == client_stages::CLIENT_STAGE_READ_TILL_END) {
+        spdlog::debug("stage READ TILL END");
         size_t end_pos = m_request.find_last_of("\r\n\r\n");
         if (end_pos != std::string::npos) {
             change_to_write_stage(server);
@@ -123,7 +137,11 @@ bool client_connection_t::process_input(
 bool client_connection_t::process_output(
     [[maybe_unused]] proxy_server_iface *server
 ) {
+    spdlog::debug(
+        "process output: current stage is {}", static_cast<int>(m_stage)
+    );
     if (m_stage != client_stages::CLIENT_STAGE_SEND_ANSWER) {
+        spdlog::debug("client_connection_t: stage != CLIENT_STAGE_SEND_ANSWER");
         return false;
     }
 

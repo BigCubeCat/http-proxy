@@ -8,11 +8,11 @@
 #include "connection/connection_t.hpp"
 
 enum server_stages {
-    SERVER_STAGE_CONNECT,
-    SERVER_STAGE_SEND_REQUEST,
-    SERVER_STAGE_READ_FIRST_LINE,
-    SERVER_STAGE_READ_HEADERS,
-    SERVER_STAGE_READ_TILL_END
+    SERVER_STAGE_CONNECT         = 10,
+    SERVER_STAGE_SEND_REQUEST    = 20,
+    SERVER_STAGE_READ_FIRST_LINE = 30,
+    SERVER_STAGE_READ_HEADERS    = 40,
+    SERVER_STAGE_READ_TILL_END   = 50
 };
 
 class server_connection_t : public connection_t {

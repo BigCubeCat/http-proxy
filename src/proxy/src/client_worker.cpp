@@ -6,8 +6,6 @@
 #include <spdlog/spdlog.h>
 #include <sys/socket.h>
 
-#include "network.hpp"
-#include "status_check.hpp"
 #include "utils.hpp"
 
 
@@ -32,15 +30,6 @@ void client_worker::stop() {
 }
 
 void client_worker::add_task(int fd) {
-    m_proxy_inst.add_server_socket(fd);
-}
-
-int client_worker::accept_client() {
-    auto client_fd = accept(m_listen_fd, nullptr, nullptr);
-    if (!error_status(client_fd, "accept failed")) {
-        return -1;
-    }
-    set_not_blocking(client_fd);
-    m_proxy_inst.add_client_socket(client_fd);
-    return client_fd;
+    spdlog::debug("adding task {}", fd);
+    m_proxy_inst.add_client_socket(fd);
 }

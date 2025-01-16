@@ -15,11 +15,17 @@ private:
     bool m_is_running = false;
 
     int m_count_workers;
+    int m_listen_fd;
     std::vector<std::shared_ptr<worker_iface>> m_workers;
 
     std::shared_ptr<thread_pool_t> m_pool;
 
     [[nodiscard]] bool init_listen_socket(int listen_fd) const;
+
+    /*!
+     * Метод для главного воркера
+     */
+    int accept_client();
 
 public:
     explicit http_proxy_t(int port, int count_threads);

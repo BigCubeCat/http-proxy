@@ -22,11 +22,6 @@ private:
 
     void process_client_fd(int client_fd, uint32_t events);
 
-    /*!
-     * Метод для главного воркера
-     */
-    int accept_client();
-
 public:
     explicit client_worker(thread_pool_t *pool_ptr, int listen_fd)
         : m_is_root(true), m_listen_fd(listen_fd), m_pool(pool_ptr) { }

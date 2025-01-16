@@ -23,34 +23,41 @@
 
 
 http_proxy_t::http_proxy_t(int port, int count_threads)
-    : m_port(port),
-      m_count_workers(count_threads - 1),
-      m_workers(count_threads) { }
+    : m_port(port), m_count_workers(count_threads), m_workers(count_threads) { }
 
 void http_proxy_t::run() {
-    m_pool        = std::make_shared<thread_pool_t>(m_count_workers + 1);
-    m_is_running  = true;
-    int listen_fd = socket(AF_INET, SOCK_STREAM, 0);
+    m_pool       = std::make_shared<thread_pool_t>(m_count_workers);
+    m_is_running = true;
+    m_listen_fd  = socket(AF_INET, SOCK_STREAM, 0);
     // создаем серверный сокет
-    if (!init_listen_socket(listen_fd)) {
+    if (!init_listen_socket(m_listen_fd)) {
         return;
     }
-    auto root_worker = std::make_shared<client_worker>(m_pool.get(), listen_fd);
-    root_worker->add_task(listen_fd);
+    spdlog::trace("listen socket inited");
 
     spdlog::info("count workers {}", m_count_workers);
-    m_workers.resize(m_count_workers + 1);
-    m_workers[0] = root_worker;
-    for (int i = 1; i < m_count_workers + 1; ++i) {
+    m_workers.resize(m_count_workers);
+    for (int i = 0; i < m_count_workers; ++i) {
+        spdlog::trace("init worker {}", i);
         m_workers[i] = std::shared_ptr<worker_iface>(
             std::make_shared<client_worker>(m_pool.get())
         );
     }
+
+    spdlog::debug("all workers initialized");
+
     m_pool->set_tasks(m_workers);
     m_pool->run(start_client_worker_routine);
-    root_worker->start();
 
-    warn_status(close(listen_fd), "error on close listen fd");
+    while (m_is_running) {
+        auto status = accept_client();
+        if (status < 0) {
+            continue;
+        }
+        m_pool->add_task(status);
+    }
+
+    warn_status(close(m_listen_fd), "error on close listen fd");
 }
 
 void http_proxy_t::stop(int status) {
@@ -71,4 +78,16 @@ bool http_proxy_t::init_listen_socket(int listen_fd) const {
         return false;
     }
     return set_not_blocking(listen_fd);
+}
+
+int http_proxy_t::accept_client() {
+    auto client_fd = accept(m_listen_fd, nullptr, nullptr);
+    if (client_fd < 0) {
+        return client_fd;
+    }
+    if (!set_not_blocking(client_fd)) {
+        return -2;
+    }
+    m_pool->add_task(client_fd);
+    return client_fd;
 }

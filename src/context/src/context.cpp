@@ -2,10 +2,13 @@
 
 #include <unistd.h>
 
+#include <spdlog/spdlog.h>
+
 #include "status_check.hpp"
 
 
 context_t::context_t() : m_ep_fd(epoll_create(MAX_EVENTS)) {
+    m_events.resize(MAX_EVENTS);
     if (m_ep_fd == -1) {
         perror("creating epoll");
         abort();
@@ -21,13 +24,16 @@ context_t::~context_t() {
 }
 
 void context_t::register_file_descriptor(int fd, uint32_t op) const noexcept {
+    spdlog::trace("register_file_descriptor {} {}", fd, op);
     epoll_event event {};
     event.data.fd = fd;
     event.events  = 0;
     if (op & EPOLLIN) {
+        spdlog::trace("EPOLLIN");
         event.events |= EPOLLIN;
     }
     if (op & EPOLLOUT) {
+        spdlog::trace("EPOLLOUT");
         event.events |= EPOLLOUT;
     }
     debug_status(
