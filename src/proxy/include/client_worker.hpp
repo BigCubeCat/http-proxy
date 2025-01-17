@@ -13,8 +13,7 @@
 class client_worker : public worker_iface {
 private:
     bool m_is_root;
-    bool m_worker_is_running = true;
-    int m_listen_fd          = -127;
+    int m_listen_fd = -127;
 
     proxy_server_t m_proxy_inst;
 
@@ -23,8 +22,7 @@ private:
     void process_client_fd(int client_fd, uint32_t events);
 
 public:
-    explicit client_worker(thread_pool_t *pool_ptr, int listen_fd)
-        : m_is_root(true), m_listen_fd(listen_fd), m_pool(pool_ptr) { }
+    explicit client_worker(thread_pool_t *pool_ptr, int listen_fd);
 
     explicit client_worker(thread_pool_t *pool_ptr)
         : m_is_root(false), m_pool(pool_ptr) { }

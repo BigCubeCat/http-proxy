@@ -37,17 +37,19 @@ void http_proxy_t::run() {
 
     spdlog::info("count workers {}", m_count_workers);
     m_workers.resize(m_count_workers);
-    for (int i = 0; i < m_count_workers; ++i) {
+    for (int i = 1; i < m_count_workers; ++i) {
         spdlog::trace("init worker {}", i);
         m_workers[i] = std::shared_ptr<worker_iface>(
             std::make_shared<client_worker>(m_pool.get())
         );
     }
+    m_workers[0] = std::make_shared<client_worker>(m_pool.get(), m_listen_fd);
 
     spdlog::debug("all workers initialized");
 
     m_pool->set_tasks(m_workers);
     m_pool->run(start_client_worker_routine, true);
+    m_workers[0]->start();
 
     warn_status(close(m_listen_fd), "error on close listen fd");
 }

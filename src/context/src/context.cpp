@@ -69,5 +69,5 @@ void context_t::unregister_file_descriptor(int fd) const noexcept {
 }
 
 int context_t::do_select() noexcept {
-    return epoll_wait(m_ep_fd, m_events.data(), MAX_EVENTS, -1);
+    return epoll_wait(m_ep_fd, m_events.data(), MAX_EVENTS, EPOLL_WAIT_TIMEOUT);
 }

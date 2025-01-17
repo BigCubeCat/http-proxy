@@ -3,6 +3,7 @@
 #include <spdlog/spdlog.h>
 
 #include "connection/client_connection_t.hpp"
+#include "connection/listen_connection.hpp"
 #include "connection/server_connection_t.hpp"
 #include "proxy/proxy_runtime_exception.hpp"
 
@@ -14,8 +15,8 @@ void proxy_server_t::erase_connection(int fd) {
 }
 
 void proxy_server_t::start_server_loop() {
-    while (true) {
-        spdlog::debug("do select");
+    while (m_is_running) {
+        spdlog::trace("do select");
         int n = m_context.do_select();
 
         for (int i = 0; i < n; ++i) {
@@ -89,12 +90,22 @@ void proxy_server_t::init_server_connection(
     const std::string &request,
     std::pair<std::string, std::shared_ptr<item_t>> item
 ) {
-    auto server_connection = std::make_shared<server_connection_t>(
-        std::move(host), std::move(request), item, this
-    );
+    auto server_connection =
+        std::make_shared<server_connection_t>(host, request, item, this);
     auto res =
         m_connections.emplace(server_connection->get_fd(), server_connection);
     if (!res.second) {
         throw proxy_runtime_exception("can't add new connection", 22);
     }
+    add_server_socket(server_connection->get_fd());
+}
+
+void proxy_server_t::init_listen_connection(thread_pool_t *pool_ptr, int fd) {
+    auto accept_connection =
+        std::make_shared<listen_connection_t>(fd, pool_ptr);
+    auto res = m_connections.emplace(fd, accept_connection);
+    if (!res.second) {
+        throw proxy_runtime_exception("can't add listen connection", 20);
+    }
+    add_client_socket(fd);
 }

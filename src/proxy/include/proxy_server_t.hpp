@@ -5,6 +5,7 @@
 
 #include "context.hpp"
 #include "proxy_server_iface.hpp"
+#include "thread_pool.hpp"
 
 #include "connection/connection_t.hpp"
 
@@ -12,6 +13,8 @@
  * \brief сущность прокси-сервера, запускаемая в client worker
  */
 class proxy_server_t : public proxy_server_iface {
+private:
+    bool m_is_running = true;
     std::map<int, std::shared_ptr<connection_t>> m_connections;
     context_t m_context;
 
@@ -39,4 +42,10 @@ public:
         const std::string &request,
         std::pair<std::string, std::shared_ptr<item_t>> item
     ) override;
+
+    void init_listen_connection(thread_pool_t *pool_ptr, int fd);
+
+    void stop() {
+        m_is_running = false;
+    };
 };
