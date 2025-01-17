@@ -3,20 +3,14 @@
 #include <spdlog/spdlog.h>
 
 #include "connection/client_connection_t.hpp"
+#include "connection/server_connection_t.hpp"
 #include "proxy/proxy_runtime_exception.hpp"
 
 proxy_server_t::proxy_server_t() = default;
 
-void proxy_server_t::erase_connection(int fd, connection_t *connection) {
+void proxy_server_t::erase_connection(int fd) {
     m_connections.erase(fd);
     m_context.unregister_file_descriptor(fd);
-    delete connection;
-}
-
-proxy_server_t::~proxy_server_t() {
-    for (auto con : m_connections) {
-        delete con.second;
-    }
 }
 
 void proxy_server_t::start_server_loop() {
@@ -27,17 +21,17 @@ void proxy_server_t::start_server_loop() {
         for (int i = 0; i < n; ++i) {
             auto fd = m_context[i].data.fd;
             spdlog::trace("processing fd={}", fd);
-            auto event               = m_context[i].events;
-            auto it                  = m_connections.find(fd);
-            connection_t *connection = nullptr;
+            auto event = m_context[i].events;
+            auto it    = m_connections.find(fd);
+            std::shared_ptr<connection_t> connection;
             if (it == m_connections.end()) {
                 spdlog::debug("connection not opened");
-                connection = new client_connection_t(fd);
+                connection = std::make_shared<client_connection_t>(fd);
                 auto res   = m_connections.emplace(fd, connection);
                 if (!res.second) {
                     spdlog::debug("cant open connection");
                     m_context.unregister_file_descriptor(fd);
-                    delete connection;
+                    connection.reset();
                     continue;
                 }
             }
@@ -48,28 +42,28 @@ void proxy_server_t::start_server_loop() {
             try {
                 if (event & (EPOLLERR | EPOLLHUP)) {
                     spdlog::trace("EPOLL ERROR");
-                    erase_connection(fd, connection);
+                    erase_connection(fd);
                     continue;
                 }
                 if (event & EPOLLIN) {
                     spdlog::trace("EPOLLIN");
                     if (connection->process_input(this)) {
-                        erase_connection(fd, connection);
+                        erase_connection(fd);
                         continue;
                     }
                 }
                 if (event & EPOLLOUT) {
                     spdlog::trace("EPOLLOUT");
                     if (connection->process_output(this)) {
-                        spdlog::warn("process_output");
-                        erase_connection(fd, connection);
+                        spdlog::warn("process process_output");
+                        erase_connection(fd);
                         continue;
                     }
                 }
             }
             catch (const std::exception &e) {
                 spdlog::critical("{}", e.what());
-                erase_connection(fd, connection);
+                erase_connection(fd);
             }
         }
     }
@@ -90,12 +84,17 @@ void proxy_server_t::add_server_socket(int fd) {
     m_context.register_file_descriptor(fd, EPOLLOUT);
 }
 
-void proxy_server_t::add_new_connection(int fd, void *con) {
-    spdlog::debug("adding new connection {}", fd);
-    auto *connection_ptr = static_cast<connection_t *>(con);
-    auto res             = m_connections.emplace(fd, connection_ptr);
+void proxy_server_t::init_server_connection(
+    const std::string &host,
+    const std::string &request,
+    std::pair<std::string, std::shared_ptr<item_t>> item
+) {
+    auto server_connection = std::make_shared<server_connection_t>(
+        std::move(host), std::move(request), item, this
+    );
+    auto res =
+        m_connections.emplace(server_connection->get_fd(), server_connection);
     if (!res.second) {
-        delete connection_ptr;
         throw proxy_runtime_exception("can't add new connection", 22);
     }
 }

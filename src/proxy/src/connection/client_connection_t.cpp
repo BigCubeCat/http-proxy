@@ -9,8 +9,6 @@
 #include "status_check.hpp"
 #include "storage.hpp"
 
-#include "connection/server_connection_t.hpp"
-
 
 client_connection_t::client_connection_t(int fd)
     : m_fd(fd),
@@ -26,12 +24,8 @@ void client_connection_t::change_to_write_stage(proxy_server_iface *server) {
         bool res = item.second->set_started(true);
         if (!res) {
             spdlog::trace("create server connection");
-            auto *server_connection =
-                new server_connection_t(m_host, m_request, item, server);
+            server->init_server_connection(m_host, m_request, item);
             spdlog::trace("adding new connection");
-            server->add_new_connection(
-                server_connection->get_fd(), server_connection
-            );
         }
     }
     spdlog::trace("storage item loaded");

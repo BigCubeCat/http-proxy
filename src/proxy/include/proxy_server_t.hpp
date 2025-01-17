@@ -1,6 +1,7 @@
 #pragma once
 
 #include <map>
+#include <memory>
 
 #include "context.hpp"
 #include "proxy_server_iface.hpp"
@@ -11,17 +12,16 @@
  * \brief сущность прокси-сервера, запускаемая в client worker
  */
 class proxy_server_t : public proxy_server_iface {
-    std::map<int, connection_t *> m_connections;
+    std::map<int, std::shared_ptr<connection_t>> m_connections;
     context_t m_context;
 
-    void erase_connection(int fd, connection_t *connection);
+    void erase_connection(int fd);
 
 public:
+    ~proxy_server_t() = default;
     explicit proxy_server_t();
 
     proxy_server_t(int connections, int selector_context) { }
-
-    ~proxy_server_t();
 
     void add_client_socket(int fd) override;
 
@@ -34,5 +34,9 @@ public:
         return &m_context;
     }
 
-    void add_new_connection(int fd, void *con) override;
+    void init_server_connection(
+        const std::string &host,
+        const std::string &request,
+        std::pair<std::string, std::shared_ptr<item_t>> item
+    ) override;
 };

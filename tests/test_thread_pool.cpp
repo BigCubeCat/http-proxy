@@ -90,7 +90,7 @@ TEST(ThreadPool, Basic) {
     auto pool = thread_pool_t(static_cast<int>(workers.size()));
     pool.set_tasks(workers);
     spdlog::warn("{}", workers[0].get() == nullptr);
-    pool.run(test_worker::start_routine);
+    pool.run(test_worker::start_routine, false);
     std::vector<int> args(static_cast<size_t>(total_tasks * n));
     int k = 0;
     for (int i = 2; i < total_tasks + 2; ++i) {

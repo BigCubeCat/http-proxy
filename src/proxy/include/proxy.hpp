@@ -22,11 +22,6 @@ private:
 
     [[nodiscard]] bool init_listen_socket(int listen_fd) const;
 
-    /*!
-     * Метод для главного воркера
-     */
-    int accept_client();
-
 public:
     explicit http_proxy_t(int port, int count_threads);
 

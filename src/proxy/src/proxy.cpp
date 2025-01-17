@@ -47,15 +47,7 @@ void http_proxy_t::run() {
     spdlog::debug("all workers initialized");
 
     m_pool->set_tasks(m_workers);
-    m_pool->run(start_client_worker_routine);
-
-    while (m_is_running) {
-        auto status = accept_client();
-        if (status < 0) {
-            continue;
-        }
-        m_pool->add_task(status);
-    }
+    m_pool->run(start_client_worker_routine, true);
 
     warn_status(close(m_listen_fd), "error on close listen fd");
 }
@@ -78,16 +70,4 @@ bool http_proxy_t::init_listen_socket(int listen_fd) const {
         return false;
     }
     return set_not_blocking(listen_fd);
-}
-
-int http_proxy_t::accept_client() {
-    auto client_fd = accept(m_listen_fd, nullptr, nullptr);
-    if (client_fd < 0) {
-        return client_fd;
-    }
-    if (!set_not_blocking(client_fd)) {
-        return -2;
-    }
-    m_pool->add_task(client_fd);
-    return client_fd;
 }

@@ -13,11 +13,14 @@ thread_pool_t::thread_pool_t(int n) : m_count_pools(n) {
     spdlog::debug("build thread_pool_t with {} pools", m_count_pools);
 }
 
-void thread_pool_t::run(const std::function<void *(void *)> &start_routine) {
+void thread_pool_t::run(
+    const std::function<void *(void *)> &start_routine, bool skip_first
+) {
     spdlog::debug(
         "cout_pools={}; tasks_size={}", m_count_pools, m_tasks.size()
     );
-    for (size_t i = 0; i < m_count_pools; ++i) {
+    int begin = (skip_first) ? 1 : 0;
+    for (size_t i = begin; i < m_count_pools; ++i) {
         spdlog::trace("starting thread {}", i);
         // start_routine должна запускать соответствующий метод в tasks
         m_threads[i] = std::thread(start_routine, m_tasks[i].get());

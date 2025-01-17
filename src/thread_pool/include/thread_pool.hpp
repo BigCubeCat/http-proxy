@@ -32,8 +32,12 @@ public:
 
     /*!
      * \brief Запускает потоки
+     * \param start_routine поточная функция
+     * \param skip_first если истина, не будет запускать поточную функцию для
+     * нулевого воркера (ожидается, что он будет запущен в основном потоке)
      */
-    void run(const std::function<void *(void *)> &start_routine);
+    void
+    run(const std::function<void *(void *)> &start_routine, bool skip_first);
 
     void stop();
 

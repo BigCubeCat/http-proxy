@@ -15,8 +15,8 @@
 
 
 server_connection_t::server_connection_t(
-    std::string &host,
-    std::string &request,
+    const std::string &host,
+    const std::string &request,
     std::pair<std::string, std::shared_ptr<item_t>> &storage_item,
     proxy_server_iface *server
 )

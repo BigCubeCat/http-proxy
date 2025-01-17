@@ -1,7 +1,10 @@
 #pragma once
 
 
+#include <memory>
+
 #include "context.hpp"
+#include "item.hpp"
 
 /*!
  * \brief Интерфейс для прокси сервера
@@ -18,5 +21,9 @@ public:
 
     virtual context_t *get_selector_ptr() = 0;
 
-    virtual void add_new_connection(int fd, void *con) = 0;
+    virtual void init_server_connection(
+        const std::string &host,
+        const std::string &request,
+        std::pair<std::string, std::shared_ptr<item_t>> item
+    ) = 0;
 };
