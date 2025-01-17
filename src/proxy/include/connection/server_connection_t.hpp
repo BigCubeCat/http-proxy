@@ -31,9 +31,16 @@ class server_connection_t : public connection_t {
     std::string m_host;
 
     /*!
-     * return true if item is removed from storage due pin_count = 0
+     * \return true если запись не используется и мы можем начать сохранять в
+     * кэш
      */
     bool check_usage();
+
+    bool read_till_end(const std::array<char, BUFFER_SIZE> &buf, ssize_t res);
+
+    bool check_connection();
+
+    void write_part();
 
 public:
     server_connection_t(

@@ -44,7 +44,7 @@ bool register_fd(int epoll_fd, int fd) {
     );
 }
 
-int open_http_socket(const std::string &host) {
+int open_http_socket(const std::string &host, int &res) {
     std::string ip_address;
     int port;
     if (!resolve_host(host, ip_address, port)) {
@@ -65,13 +65,9 @@ int open_http_socket(const std::string &host) {
         warn_status(close(sock_fd), "close");
         return -1;
     }
-    auto conn_st = connect(
+    res = connect(
         sock_fd, reinterpret_cast<sockaddr *>(&server_addr), sizeof(server_addr)
     );
-    warn_status(conn_st, "connection to server failed");
-    if (conn_st < 0) {
-        debug_status(close(sock_fd), "close socket failed");
-        return -1;
-    }
+    warn_status(res, "connection to server failed");
     return sock_fd;
 }

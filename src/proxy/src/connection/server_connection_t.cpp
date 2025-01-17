@@ -5,9 +5,11 @@
 #include <netdb.h>
 
 #include <spdlog/spdlog.h>
+#include <sys/types.h>
 
 #include "const.hpp"
 #include "http.hpp"
+#include "network.hpp"
 #include "status_check.hpp"
 #include "storage.hpp"
 
@@ -20,7 +22,7 @@ server_connection_t::server_connection_t(
     std::pair<std::string, std::shared_ptr<item_t>> &storage_item,
     proxy_server_iface *server
 )
-    : m_fd(socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0)),
+    : m_fd(-1),
       m_request_offset(0),
       m_storage_item(storage_item),
       m_content_len(-1),
@@ -30,27 +32,11 @@ server_connection_t::server_connection_t(
       m_is_removed_due_to_unused(false),
       m_request_to_send(request),
       m_host(host) {
-    addrinfo hints {};
-    addrinfo *result;
-    int s;
-    std::string service = "http";
-    memset(&hints, 0, sizeof(hints));
-    hints.ai_family   = AF_INET;
-    hints.ai_socktype = SOCK_STREAM;
-    hints.ai_flags    = 0;
-    hints.ai_protocol = 0;
-
     spdlog::debug(
         "server connection on sock_fd: {} for url{}", m_fd, m_storage_item.first
     );
-
-    s = getaddrinfo(m_host.c_str(), service.data(), &hints, &result);
-    if (s != 0) {
-        throw std::runtime_error(strerror(errno));
-    }
-
-    int res = connect(m_fd, result->ai_addr, result->ai_addrlen);
-    freeaddrinfo(result);
+    int res;
+    m_fd = open_http_socket(m_host, res);
     if (res == 0) {
         spdlog::debug("stage SEND REQUEST");
         m_stage = SERVER_STAGE_SEND_REQUEST;
@@ -65,7 +51,7 @@ server_connection_t::server_connection_t(
 }
 
 server_connection_t::~server_connection_t() {
-    spdlog::debug("close server connection sock_fd: {}", m_fd);
+    spdlog::info("close server connection sock_fd: {}", m_fd);
     warn_status(close(m_fd), "close fd error");
     m_storage_item.second->set_completed(true);
 
@@ -88,15 +74,6 @@ server_connection_t::~server_connection_t() {
     }
 }
 
-bool server_connection_t::check_usage() {
-    if (m_storage_item.second->get_pin_count() == 0) {
-        bool res = storage::instance().try_remove_if_unused(m_storage_item);
-        m_is_removed_due_to_unused = res;
-        return res;
-    }
-    return false;
-}
-
 bool server_connection_t::process_output(proxy_server_iface *server) {
     spdlog::trace("server_connection_t process output");
     if (check_usage()) {
@@ -105,20 +82,9 @@ bool server_connection_t::process_output(proxy_server_iface *server) {
     }
 
     if (m_stage == SERVER_STAGE_CONNECT) {
-        spdlog::debug("stage CONNECT");
-        sockaddr addr {};
-        socklen_t len = sizeof(addr);
-        int res       = getpeername(m_fd, &addr, &len);
-
-        if (res == 0) {
-            spdlog::debug("stage switched to SEND REQUEST");
-            m_stage = SERVER_STAGE_SEND_REQUEST;
-        }
-        else {
-            if (errno == ENOTCONN) {
-                return false;
-            }
-            throw std::runtime_error("can not connect to server");
+        // проверяем подключение
+        if (!check_connection()) {
+            return false;
         }
     }
 
@@ -126,30 +92,8 @@ bool server_connection_t::process_output(proxy_server_iface *server) {
         spdlog::debug("stage != SERVER_STAGE_SEND_REQUEST");
         return false;
     }
-    spdlog::trace("tring to write");
 
-    ssize_t res = write(
-        m_fd,
-        m_request_to_send.c_str() + m_request_offset,
-        std::min(
-            m_request_to_send.length() - m_request_offset,
-            static_cast<unsigned long>(BUFFER_SIZE)
-        )
-    );
-
-    if (res == 0) {
-        throw proxy_runtime_exception("connection is closed by the server", 17);
-    }
-
-    if (res == -1) {
-        if (errno == EAGAIN) {
-            spdlog::trace("server_connection_t: EAGAIN recv");
-            return false;
-        }
-        throw proxy_runtime_exception(strerror(errno), errno);
-    }
-
-    m_request_offset += res;
+    write_part();
 
     if (m_request_offset == m_request_to_send.length()) {
         m_request_to_send.clear();
@@ -157,6 +101,7 @@ bool server_connection_t::process_output(proxy_server_iface *server) {
         m_stage = server_stages::SERVER_STAGE_READ_FIRST_LINE;
         server->change_sock_mod(m_fd, EPOLLIN);
     }
+
     return false;
 }
 
@@ -167,7 +112,6 @@ bool server_connection_t::process_input(
     if (check_usage()) {
         return true;
     }
-
     if (m_stage != server_stages::SERVER_STAGE_READ_FIRST_LINE
         && m_stage != server_stages::SERVER_STAGE_READ_TILL_END
         && m_stage != server_stages::SERVER_STAGE_READ_HEADERS) {
@@ -266,30 +210,84 @@ bool server_connection_t::process_input(
         }
     }
 
-
     if (m_stage == server_stages::SERVER_STAGE_READ_TILL_END) {
-        size_t read_count = res;
-        if (m_content_len > 0) {
-            read_count = std::min(
-                read_count,
-                static_cast<size_t>(m_content_len) - m_content_offset
-            );
+        return read_till_end(read_buffer, res);
+    }
+    return false;
+}
+
+bool server_connection_t::read_till_end(
+    const std::array<char, BUFFER_SIZE> &buf, ssize_t res
+) {
+    size_t read_count = res;
+    if (m_content_len > 0) {
+        read_count = std::min(
+            read_count, static_cast<size_t>(m_content_len) - m_content_offset
+        );
+    }
+    std::string current_data(buf.data(), read_count);
+    m_content_offset += read_count;
+    m_storage_item.second->put_data(current_data);
+
+    if (static_cast<ssize_t>(m_content_offset) == m_content_len) {
+        spdlog::debug(
+            "data from server is fully obtained on server connection "
+            "sock_fd: {}",
+            m_fd
+        );
+        m_storage_item.second->set_completed(true);
+        return true;
+    }
+    return false;
+}
+
+bool server_connection_t::check_connection() {
+    sockaddr addr {};
+    socklen_t len = sizeof(addr);
+    int res       = getpeername(m_fd, &addr, &len);
+
+    if (res == 0) {
+        spdlog::debug("stage switched to SEND REQUEST");
+        m_stage = SERVER_STAGE_SEND_REQUEST;
+        return true;
+    }
+    if (errno == ENOTCONN) {
+        return false;
+    }
+    throw std::runtime_error("can not connect to server");
+}
+
+void server_connection_t::write_part() {
+
+    ssize_t res = write(
+        m_fd,
+        m_request_to_send.c_str() + m_request_offset,
+        std::min(
+            m_request_to_send.length() - m_request_offset,
+            static_cast<unsigned long>(BUFFER_SIZE)
+        )
+    );
+
+    if (res == 0) {
+        throw proxy_runtime_exception("connection is closed by the server", 17);
+    }
+
+    if (res == -1) {
+        if (errno == EAGAIN) {
+            spdlog::trace("server_connection_t: EAGAIN recv");
+            return false;
         }
-        std::string current_data(read_buffer.data(), read_count);
+        throw proxy_runtime_exception(strerror(errno), errno);
+    }
 
-        m_content_offset += read_count;
+    m_request_offset += res;
+}
 
-        m_storage_item.second->put_data(current_data);
-
-        if (static_cast<ssize_t>(m_content_offset) == m_content_len) {
-            spdlog::debug(
-                "data from server is fully obtained on server connection "
-                "sock_fd: {}",
-                m_fd
-            );
-            m_storage_item.second->set_completed(true);
-            return true;
-        }
+bool server_connection_t::check_usage() {
+    if (m_storage_item.second->get_pin_count() == 0) {
+        bool res = storage::instance().try_remove_if_unused(m_storage_item);
+        m_is_removed_due_to_unused = res;
+        return res;
     }
     return false;
 }

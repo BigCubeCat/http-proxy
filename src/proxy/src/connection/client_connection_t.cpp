@@ -84,9 +84,6 @@ bool client_connection_t::process_input(
 bool client_connection_t::process_output(
     [[maybe_unused]] proxy_server_iface *server
 ) {
-    spdlog::debug(
-        "process output: current stage is {}", static_cast<int>(m_stage)
-    );
     if (m_stage != client_stages::CLIENT_STAGE_SEND_ANSWER) {
         spdlog::debug("client_connection_t: stage != CLIENT_STAGE_SEND_ANSWER");
         return false;
