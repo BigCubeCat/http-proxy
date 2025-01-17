@@ -5,7 +5,7 @@
 #include <spdlog/spdlog.h>
 
 #include "const.hpp"
-#include "http.hpp"
+#include "parser.hpp"
 #include "status_check.hpp"
 #include "storage.hpp"
 
@@ -13,7 +13,7 @@
 client_connection_t::client_connection_t(int fd)
     : m_fd(fd),
       m_last_unparsed_line_start(0),
-      m_stage(client_stages::CLIENT_STAGE_READ_FIRST_LINE),
+      m_stage(client_stages::CLIENT_STAGE_READ_REQUEST),
       m_send_offset(0) { }
 
 void client_connection_t::change_to_write_stage(proxy_server_iface *server) {
@@ -57,72 +57,25 @@ bool client_connection_t::process_input(
     }
 
     m_request.append(read_buffer.data(), res);
-    spdlog::debug("request = {}", m_request);
-    if (m_stage == client_stages::CLIENT_STAGE_READ_FIRST_LINE) {
+    spdlog::trace("request = {}", m_request);
+    if (m_stage == client_stages::CLIENT_STAGE_READ_REQUEST) {
         spdlog::debug("stage READ FIRST LINE");
-        size_t end_line_pos = m_request.find("\r\n");
+        // проверяем, закончено ли получение запроса
+        size_t end_line_pos = m_request.find("\r\n\r\n");
         if (end_line_pos == std::string::npos) {
             spdlog::debug("here");
             return false;
         }
-        if (m_request.substr(0, 3) != "GET") {
+        std::string method;
+        if (!parse_request(m_request, method, m_url, m_host)) {
+            spdlog::error("invalid client request; {}", m_request);
+            return false;
+        }
+        if (method != "GET") {
             spdlog::error("unsuportable protocol operation");
             return false;
         }
-        size_t last_space_pos = m_request.find_last_of(' ', end_line_pos);
-        if (last_space_pos == std::string::npos) {
-            spdlog::error("invalid GET request header");
-            return false;
-        }
-        change_http_version_in_message(
-            m_request, last_space_pos + 1, end_line_pos - 1 - last_space_pos
-        );
-        m_url = m_request.substr(4, last_space_pos - 4);
-        spdlog::debug("stage switched to READ HOST");
-        m_stage                    = client_stages::CLIENT_STAGE_READ_HOST;
-        m_last_unparsed_line_start = end_line_pos + 2;
-    }
-
-    if (m_stage == client_stages::CLIENT_STAGE_READ_HOST) {
-        spdlog::debug("stage READ HOST");
-        while (m_last_unparsed_line_start < m_request.length()) {
-            size_t end_line_pos =
-                m_request.find("\r\n", m_last_unparsed_line_start);
-            if (end_line_pos == std::string::npos) {
-                return false;
-            }
-
-            if (m_last_unparsed_line_start == end_line_pos) {
-                change_to_write_stage(server);
-                return false;
-            }
-
-            std::string line = m_request.substr(
-                m_last_unparsed_line_start,
-                end_line_pos - m_last_unparsed_line_start
-            );
-            size_t param_end_index = line.find(':');
-            if (param_end_index == std::string::npos) {
-                spdlog::error("invalid parametr in HTTP header");
-                return false;
-            }
-            if (line.substr(0, param_end_index) == "Host") {
-                m_host                     = line.substr(param_end_index + 2);
-                m_last_unparsed_line_start = end_line_pos + 2;
-                spdlog::debug("stage switched to READ TILL END");
-                m_stage = client_stages::CLIENT_STAGE_READ_TILL_END;
-                break;
-            }
-            m_last_unparsed_line_start = end_line_pos + 2;
-        }
-    }
-    if (m_stage == client_stages::CLIENT_STAGE_READ_TILL_END) {
-        spdlog::debug("stage READ TILL END");
-        size_t end_pos = m_request.find_last_of("\r\n\r\n");
-        if (end_pos != std::string::npos) {
-            change_to_write_stage(server);
-            return false;
-        }
+        change_to_write_stage(server);
     }
     return false;
 }

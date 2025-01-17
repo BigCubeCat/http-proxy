@@ -8,10 +8,8 @@
 #include "connection/connection_t.hpp"
 
 enum client_stages {
-    CLIENT_STAGE_READ_FIRST_LINE = 0,
-    CLIENT_STAGE_READ_HOST       = 1,
-    CLIENT_STAGE_READ_TILL_END   = 2,
-    CLIENT_STAGE_SEND_ANSWER     = 3
+    CLIENT_STAGE_READ_REQUEST = 0,
+    CLIENT_STAGE_SEND_ANSWER  = 1
 };
 
 class client_connection_t : public connection_t {

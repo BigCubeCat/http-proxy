@@ -11,8 +11,7 @@
 #include "utils.hpp"
 
 bool parse_request(
-    const char *buf,
-    ssize_t len,
+    const std::string &buf,
     std::string &method,
     std::string &url,
     std::string &host
@@ -26,8 +25,8 @@ bool parse_request(
     int minor_version;
 
     int pret = phr_parse_request(
-        buf,
-        len,
+        buf.data(),
+        buf.size(),
         &method_ptr,
         &method_len,
         &path_ptr,
@@ -51,6 +50,7 @@ bool parse_request(
             host = std::string(headers[i].value, headers[i].value_len);
         }
     }
+    spdlog::debug("method={}; url={}; host={}", method, url, host);
 
     return true;
 }
