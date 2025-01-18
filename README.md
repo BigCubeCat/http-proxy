@@ -62,4 +62,4 @@ localhost:8083 - redirect
 
 ## Схема
 
-![[assets/description.png]]
+![схема](assets/description.png)
