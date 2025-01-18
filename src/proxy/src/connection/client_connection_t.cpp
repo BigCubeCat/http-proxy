@@ -53,6 +53,7 @@ bool client_connection_t::process_input(
             spdlog::warn("client_connection_t process input: EAGAIN recv");
             return false;
         }
+        spdlog::error("client connection cant read");
         throw std::runtime_error(strerror(errno));
     }
 
@@ -88,9 +89,7 @@ bool client_connection_t::process_output(
         spdlog::debug("client_connection_t: stage != CLIENT_STAGE_SEND_ANSWER");
         return false;
     }
-
     std::string buffer;
-
     int res = m_storage_item->get_data(
         buffer,
         m_send_offset,
@@ -110,6 +109,7 @@ bool client_connection_t::process_output(
         if (errno == EAGAIN) {
             return false;
         }
+        spdlog::error("client_connection_t: invalid write {}", m_fd);
         throw std::runtime_error(strerror(errno));
     }
     if (send_res == 0) {

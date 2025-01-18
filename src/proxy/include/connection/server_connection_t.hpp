@@ -25,6 +25,7 @@ class server_connection_t : public connection_t {
     server_stages m_stage;
     bool m_is_removed_due_to_unused;
 
+    std::string m_location;
     std::string m_request_to_send;
     std::string m_tmp_answer_buffer;
     std::string m_host;

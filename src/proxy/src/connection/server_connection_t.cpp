@@ -51,7 +51,6 @@ server_connection_t::server_connection_t(
 }
 
 server_connection_t::~server_connection_t() {
-    spdlog::info("close server connection sock_fd: {}", m_fd);
     warn_status(close(m_fd), "close fd error");
     m_storage_item.second->set_completed(true);
 
@@ -108,7 +107,6 @@ bool server_connection_t::process_output(proxy_server_iface *server) {
 bool server_connection_t::process_input(
     [[maybe_unused]] proxy_server_iface *server
 ) {
-    spdlog::info("srever connection process_input");
     if (check_usage()) {
         return true;
     }
@@ -134,6 +132,7 @@ bool server_connection_t::process_input(
         if (m_stage == server_stages::SERVER_STAGE_READ_HEADERS) {
             m_storage_item.second->put_data(m_tmp_answer_buffer);
         }
+        spdlog::error("server_connection_t: invalid read");
         throw proxy_runtime_exception(strerror(errno), errno);
     }
     if (m_stage == server_stages::SERVER_STAGE_READ_HEADERS) {
@@ -234,6 +233,7 @@ void server_connection_t::write_part() {
             spdlog::trace("server_connection_t: EAGAIN recv");
             return;
         }
+        spdlog::error("server_connection_t: invalid write_part()");
         throw proxy_runtime_exception(strerror(errno), errno);
     }
 
@@ -268,8 +268,14 @@ bool server_connection_t::read_headers() {
             );
         }
 
-        if (line.substr(0, param_end_index) == "Content-Length") {
+        auto key = line.substr(0, param_end_index);
+        if (key == "Content-Length") {
             m_content_len = std::stol(line.substr(param_end_index + 1));
+            spdlog::debug("Content-Length: {}", m_content_len);
+        }
+        else if (key == "Location") {
+            m_location = line.substr(param_end_index + 1);
+            spdlog::info("Location: {}", m_location);
         }
         m_last_unparsed_line_start = end_line_pos + 2;
     }
