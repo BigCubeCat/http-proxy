@@ -1,5 +1,7 @@
 #include "proxy_server_t.hpp"
 
+#include <memory>
+
 #include <spdlog/spdlog.h>
 
 #include "connection/client_connection_t.hpp"
@@ -105,6 +107,15 @@ void proxy_server_t::init_listen_connection(thread_pool_t *pool_ptr, int fd) {
     auto res = m_connections.emplace(fd, accept_connection);
     if (!res.second) {
         throw proxy_runtime_exception("can't add listen connection", 20);
+    }
+    add_client_socket(fd);
+}
+
+void proxy_server_t::init_client_connection(int fd) {
+    auto client_connection = std::make_shared<client_connection_t>(fd);
+    auto res               = m_connections.emplace(fd, client_connection);
+    if (!res.second) {
+        throw proxy_runtime_exception("can't add new connection", 23);
     }
     add_client_socket(fd);
 }

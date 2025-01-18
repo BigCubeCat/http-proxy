@@ -26,3 +26,5 @@ bool register_fd(int epoll_fd, int fd);
  * В случае ошибки логирует сообщение об ошибке и возращает -1
  */
 int open_http_socket(const std::string &host, int &res);
+
+int reopen_http_socket(int fd, const std::string &host);

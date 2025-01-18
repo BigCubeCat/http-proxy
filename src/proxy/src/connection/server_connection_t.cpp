@@ -1,6 +1,7 @@
 #include "connection/server_connection_t.hpp"
 
 #include <cstring>
+#include <stdexcept>
 
 #include <netdb.h>
 
@@ -117,7 +118,6 @@ bool server_connection_t::process_input(
     }
 
     std::array<char, BUFFER_SIZE> read_buffer {};
-
     ssize_t res = read(m_fd, read_buffer.data(), BUFFER_SIZE);
     if (res == 0) {
         if (m_stage != server_stages::SERVER_STAGE_READ_TILL_END) {
@@ -276,6 +276,7 @@ bool server_connection_t::read_headers() {
         else if (key == "Location") {
             m_location = line.substr(param_end_index + 1);
             spdlog::info("Location: {}", m_location);
+            return false;
         }
         m_last_unparsed_line_start = end_line_pos + 2;
     }

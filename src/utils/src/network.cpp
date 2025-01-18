@@ -71,3 +71,31 @@ int open_http_socket(const std::string &host, int &res) {
     warn_status(res, "connection to server failed");
     return sock_fd;
 }
+
+int reopen_http_socket(int fd, const std::string &host) {
+    spdlog::warn("reopen_http_socket");
+    std::string ip_address;
+    int port;
+    if (!resolve_host(host, ip_address, port)) {
+        spdlog::error("failed to resolve host: {}", host);
+        return -1;
+    }
+    sockaddr_in server_addr {};
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_port   = htons(port);
+    if (!error_status(fd, "socket create failed")) {
+        return -1;
+    }
+    auto inet_st =
+        inet_pton(AF_INET, ip_address.c_str(), &server_addr.sin_addr);
+    if (!error_status(inet_st, "inet pton error")) {
+        warn_status(close(fd), "close");
+        return -1;
+    }
+    auto res = connect(
+        fd, reinterpret_cast<sockaddr *>(&server_addr), sizeof(server_addr)
+    );
+    warn_status(res, "connection to server failed");
+    return res;
+    ;
+}

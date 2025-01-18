@@ -45,6 +45,8 @@ public:
 
     void init_listen_connection(thread_pool_t *pool_ptr, int fd);
 
+    void init_client_connection(int fd);
+
     void stop() {
         m_is_running = false;
     };
