@@ -26,3 +26,9 @@ bool is_localhost_url(const std::string &possible_localhost);
  * Вызывать эту функцию только в поточной функции
  */
 void disable_signals();
+
+
+/*!
+ * \brief возращает текущее время время
+ */
+int current_time();

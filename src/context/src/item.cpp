@@ -1,6 +1,9 @@
 #include "item.hpp"
 
-item_t::item_t() : m_started(false), m_completed(false), m_pin_count(0) { }
+#include "utils.hpp"
+
+item_t::item_t()
+    : m_started(false), m_completed(false), m_pin_count(0), m_unixtime(0) { }
 
 void item_t::pin() {
     m_lock.lock();
@@ -67,6 +70,7 @@ int item_t::get_data(
 void item_t::set_completed(bool val) noexcept {
     m_lock.lock();
     m_completed = val;
+    m_unixtime  = current_time();
     if (m_completed) {
         size_t len = m_waiting_clients.size();
         for (size_t i = 0; i < len; ++i) {

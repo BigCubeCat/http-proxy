@@ -1,5 +1,7 @@
 #include "cache.hpp"
 
+#include "utils.hpp"
+
 std::pair<std::string, std::shared_ptr<item_t>>
 cache_t::get_item(const std::string &key) noexcept {
     m_mutex.lock();
@@ -22,15 +24,25 @@ void cache_t::remove_item(const std::string &key) noexcept {
     m_mutex.unlock();
 }
 
-bool cache_t::try_remove_if_unused(
-    std::pair<std::string, std::shared_ptr<item_t>> &pair
-) {
+void cache_t::try_clean() {
+    if (m_hash_map.size() < m_max_size) {
+        return;
+    }
     m_mutex.lock();
-    if (pair.second->get_pin_count() == 0) {
-        m_hash_map.erase(pair.first);
-        m_mutex.unlock();
-        return true;
+    auto ct = current_time();
+    for (auto it = m_hash_map.begin(); it != m_hash_map.end();) {
+        if (it->second->unixtime() > 0 && it->second->get_pin_count() == 0
+            && ct - it->second->unixtime() > m_ttl) {
+            it = m_hash_map.erase(it);
+        }
+        else {
+            ++it;
+        }
     }
     m_mutex.unlock();
-    return false;
+}
+
+void cache_t::update_params(long ttl, size_t size) {
+    m_ttl      = ttl;
+    m_max_size = size;
 }

@@ -23,14 +23,11 @@ public:
     std::pair<std::string, std::shared_ptr<item_t>>
     get_item(const std::string &key);
 
-    bool
-    try_remove_if_unused(std::pair<std::string, std::shared_ptr<item_t>> &pair);
-
     void remove_item(const std::string &key) noexcept;
 
     void free();
 
-    void init();
+    void init(long ttl, size_t size);
 
     static storage &instance();
 };

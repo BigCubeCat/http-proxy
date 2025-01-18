@@ -283,10 +283,5 @@ bool server_connection_t::read_headers() {
 }
 
 bool server_connection_t::check_usage() {
-    if (m_storage_item.second->get_pin_count() == 0) {
-        bool res = storage::instance().try_remove_if_unused(m_storage_item);
-        m_is_removed_due_to_unused = res;
-        return res;
-    }
-    return false;
+    return m_storage_item.second->get_pin_count() == 0;
 }

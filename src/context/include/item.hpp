@@ -17,9 +17,14 @@ class item_t {
     std::mutex m_lock;
     int m_pin_count;
     std::vector<wait_context_t> m_waiting_clients;
+    int m_unixtime;
 
 public:
     explicit item_t();
+
+    [[nodiscard]] int unixtime() const {
+        return m_unixtime;
+    }
 
     /*!
      * \brief увеличить число подключенных клиентов на 1

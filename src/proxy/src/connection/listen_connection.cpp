@@ -5,6 +5,7 @@
 
 #include "network.hpp"
 #include "status_check.hpp"
+#include "storage.hpp"
 
 
 listen_connection_t::listen_connection_t(int listen_fd, thread_pool_t *pool_ptr)
@@ -20,6 +21,7 @@ int listen_connection_t::accept_client() {
         return -2;
     }
     m_pool_ptr->add_task(client_fd);
+    storage::instance().try_clean();
     return client_fd;
 }
 

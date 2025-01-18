@@ -62,3 +62,12 @@ void disable_signals() {
         pthread_sigmask(SIG_BLOCK, &set, nullptr), "pthread_sigmask failed"
     );
 }
+
+int current_time() {
+    const auto p1 = std::chrono::system_clock::now();
+    return static_cast<int>(
+        std::chrono::duration_cast<std::chrono::seconds>(p1.time_since_epoch())
+            .count()
+        % 1000000
+    );
+}

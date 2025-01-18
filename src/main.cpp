@@ -41,7 +41,7 @@ int main(int argc, char *argv[]) {
     }
     spdlog::set_level(conf.logging_level);
 
-    storage::instance().init();
+    storage::instance().init(conf.ttl, conf.cache_size);
 
     proxy_inst = std::make_shared<http_proxy_t>(
         conf.proxy_port, static_cast<int>(conf.max_client_threads)
