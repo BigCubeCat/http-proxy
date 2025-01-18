@@ -8,6 +8,7 @@ class Site1Handler(http.server.SimpleHTTPRequestHandler):
 
     def do_GET(self):
         self.send_response(200)
+        self.send_header('Content-Length', '5242880')
         self.send_header('Content-Type', 'application/zip')
         self.end_headers()
         with open('largefile.zip', 'rb') as file:

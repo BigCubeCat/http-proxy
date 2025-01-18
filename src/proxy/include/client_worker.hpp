@@ -3,8 +3,7 @@
 #include <spdlog/spdlog.h>
 #include <sys/epoll.h>
 
-#include "epoll_controller.hpp"
-#include "proxy_cache.hpp"
+#include "proxy_server_t.hpp"
 #include "task.hpp"
 #include "thread_pool.hpp"
 
@@ -14,35 +13,21 @@
 class client_worker : public worker_iface {
 private:
     bool m_is_root;
-    bool m_worker_is_running = true;
-    int m_listen_fd          = -127;
+    int m_listen_fd = -127;
 
-    epoll_controller m_epoll;
+    proxy_server_t m_proxy_inst;
+
     thread_pool_t *m_pool;
-    cache_t *m_cache;
 
-    void process_client_fd(int client_fd);
-
-    /*!
-     * Метод для главного воркера
-     */
-    int accept_client();
+    void process_client_fd(int client_fd, uint32_t events);
 
 public:
-    explicit client_worker(
-        cache_t *cache, thread_pool_t *pool_ptr, int listen_fd
-    )
-        : m_is_root(true),
-          m_listen_fd(listen_fd),
-          m_pool(pool_ptr),
-          m_cache(cache) { }
+    explicit client_worker(thread_pool_t *pool_ptr, int listen_fd);
 
-    explicit client_worker(cache_t *cache, thread_pool_t *pool_ptr)
-        : m_is_root(false), m_pool(pool_ptr), m_cache(cache) { }
+    explicit client_worker(thread_pool_t *pool_ptr)
+        : m_is_root(false), m_pool(pool_ptr) { }
 
     void start() override;
-
-    void run();
 
     void stop() override;
 

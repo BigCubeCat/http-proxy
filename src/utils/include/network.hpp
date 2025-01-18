@@ -7,8 +7,9 @@
 /*!
  * \brief Переключает файловый дискриптор в неблокирующий режим
  * \param[in] fd файловый дескриптор
+ * \returns Возращает false в случае ошибки
  */
-void set_not_blocking(int fd);
+bool set_not_blocking(int fd);
 
 /*!
  * \brief создание принимающего сокета
@@ -24,4 +25,4 @@ bool register_fd(int epoll_fd, int fd);
  * Возращает fd открытого сокета
  * В случае ошибки логирует сообщение об ошибке и возращает -1
  */
-int open_http_socket(const std::string &host);
+int open_http_socket(const std::string &host, int &res);

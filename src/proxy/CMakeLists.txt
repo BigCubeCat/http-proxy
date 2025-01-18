@@ -21,7 +21,7 @@ target_include_directories(${PROJECT_NAME}
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>")
 
 
-include_directories(${CMAKE_SOURCE_DIR}/src/proxy/include)
+include_directories(${CMAKE_SOURCE_DIR}/src/context/include)
 
-target_link_libraries(${PROJECT_NAME} PUBLIC utils_lib thread_pool_lib cache_lib exceptions_lib task_lib picohttpparser PRIVATE spdlog::spdlog)
+target_link_libraries(${PROJECT_NAME} PUBLIC utils_lib thread_pool_lib context_lib exceptions_lib task_lib picohttpparser PRIVATE spdlog::spdlog)
 

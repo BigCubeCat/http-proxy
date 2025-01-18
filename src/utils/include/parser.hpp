@@ -6,8 +6,7 @@
  * \brief Парсинг запроса с помощью picohttpparser
  */
 bool parse_request(
-    const char *buf,
-    ssize_t len,
+    const std::string &buf,
     std::string &method,
     std::string &url,
     std::string &host

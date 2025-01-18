@@ -3,11 +3,11 @@
 
 #include <sys/epoll.h>
 
-#include "proxy_cache.hpp"
 #include "thread_pool.hpp"
 
 /*!
- * Объект прокси
+ * \brief Объект прокси
+ * Принимает конфиг и работает с пулом потоков
  */
 class http_proxy_t {
 private:
@@ -15,15 +15,15 @@ private:
     bool m_is_running = false;
 
     int m_count_workers;
+    int m_listen_fd;
     std::vector<std::shared_ptr<worker_iface>> m_workers;
 
-    cache_t *m_cache;
     std::shared_ptr<thread_pool_t> m_pool;
 
-    bool init_listen_socket(int listen_fd);
+    [[nodiscard]] bool init_listen_socket(int listen_fd) const;
 
 public:
-    explicit http_proxy_t(cache_t *cache, int port, int count_threads);
+    explicit http_proxy_t(int port, int count_threads);
 
     void run();
 

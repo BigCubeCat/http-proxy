@@ -11,19 +11,18 @@
 #include "parser.hpp"
 #include "status_check.hpp"
 
-#include "proxy/proxy_runtime_exception.hpp"
-
-void set_not_blocking(int fd) {
+bool set_not_blocking(int fd) {
     int flags = fcntl(fd, F_GETFL, SO_REUSEPORT);
     if (flags == -1) {
         spdlog::critical("fcntl F_GETFL");
-        throw proxy_runtime_exception("fcntl F_GETFL", -1);
+        return false;
     }
     flags = fcntl(fd, F_SETFL, flags | O_NONBLOCK);
     if (flags == -1) {
         spdlog::critical("fcntl F_SETFL");
-        throw proxy_runtime_exception("fcntl F_SETFL", -1);
+        return false;
     }
+    return true;
 }
 
 int bind_socket(int fd, int port) {
@@ -45,7 +44,7 @@ bool register_fd(int epoll_fd, int fd) {
     );
 }
 
-int open_http_socket(const std::string &host) {
+int open_http_socket(const std::string &host, int &res) {
     std::string ip_address;
     int port;
     if (!resolve_host(host, ip_address, port)) {
@@ -66,13 +65,9 @@ int open_http_socket(const std::string &host) {
         warn_status(close(sock_fd), "close");
         return -1;
     }
-    auto conn_st = connect(
+    res = connect(
         sock_fd, reinterpret_cast<sockaddr *>(&server_addr), sizeof(server_addr)
     );
-    warn_status(conn_st, "connection to server failed");
-    if (conn_st < 0) {
-        debug_status(close(sock_fd), "close socket failed");
-        return -1;
-    }
+    warn_status(res, "connection to server failed");
     return sock_fd;
 }

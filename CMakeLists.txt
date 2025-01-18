@@ -12,7 +12,7 @@ add_subdirectory(lib/picohttpparser)
 add_subdirectory(src/thread_pool)
 add_subdirectory(src/task)
 add_subdirectory(src/exceptions)
-add_subdirectory(src/cache)
+add_subdirectory(src/context)
 add_subdirectory(src/utils)
 add_subdirectory(src/proxy)
 
@@ -22,7 +22,7 @@ link_directories(${CMAKE_BINARY_DIR}/lib/picohttpparser)
 find_package(spdlog REQUIRED)
 target_link_libraries(${EXECUTABLE_NAME} PUBLIC
 picohttpparser
-cache_lib
+context_lib
 exceptions_lib
 task_lib 
 proxy_lib
