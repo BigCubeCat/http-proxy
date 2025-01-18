@@ -98,7 +98,7 @@ bool server_connection_t::process_output(proxy_server_iface *server) {
     if (m_request_offset == m_request_to_send.length()) {
         m_request_to_send.clear();
         spdlog::debug("stage switched to READ FIRST LINE");
-        m_stage = server_stages::SERVER_STAGE_READ_FIRST_LINE;
+        m_stage = server_stages::SERVER_STAGE_READ_HEADERS;
         server->change_sock_mod(m_fd, EPOLLIN);
     }
 
@@ -112,7 +112,7 @@ bool server_connection_t::process_input(
     if (check_usage()) {
         return true;
     }
-    if (m_stage != server_stages::SERVER_STAGE_READ_FIRST_LINE
+    if (m_stage != server_stages::SERVER_STAGE_READ_HEADERS
         && m_stage != server_stages::SERVER_STAGE_READ_TILL_END
         && m_stage != server_stages::SERVER_STAGE_READ_HEADERS) {
         return false;
@@ -131,20 +131,13 @@ bool server_connection_t::process_input(
         if (errno == EAGAIN) {
             return false;
         }
-
-        if (m_stage == server_stages::SERVER_STAGE_READ_FIRST_LINE
-            || m_stage == server_stages::SERVER_STAGE_READ_HEADERS) {
+        if (m_stage == server_stages::SERVER_STAGE_READ_HEADERS) {
             m_storage_item.second->put_data(m_tmp_answer_buffer);
         }
         throw proxy_runtime_exception(strerror(errno), errno);
     }
-
-    if (m_stage == server_stages::SERVER_STAGE_READ_FIRST_LINE
-        || m_stage == server_stages::SERVER_STAGE_READ_HEADERS) {
+    if (m_stage == server_stages::SERVER_STAGE_READ_HEADERS) {
         m_tmp_answer_buffer.append(read_buffer.data(), res);
-    }
-
-    if (m_stage == server_stages::SERVER_STAGE_READ_FIRST_LINE) {
         size_t end_line_pos = m_tmp_answer_buffer.find("\r\n");
         if (end_line_pos == std::string::npos) {
             return false;
@@ -157,14 +150,11 @@ bool server_connection_t::process_input(
             throw proxy_runtime_exception("invalid answer format", 19);
         }
 
-        std::string code_string =
-            m_tmp_answer_buffer.substr(first_space_pos + 1, 3);
-
-        m_http_code               = std::stoi(code_string);
+        auto code_string = m_tmp_answer_buffer.substr(first_space_pos + 1, 3);
+        m_http_code      = std::stoi(code_string);
         size_t size_before_change = m_tmp_answer_buffer.length();
         change_http_version_in_message(m_tmp_answer_buffer, 0, first_space_pos);
         size_t size_after_change = m_tmp_answer_buffer.length();
-        m_stage                  = server_stages::SERVER_STAGE_READ_HEADERS;
         m_last_unparsed_line_start =
             end_line_pos + 2 + (size_after_change - size_before_change);
 
@@ -173,40 +163,8 @@ bool server_connection_t::process_input(
             m_http_code,
             m_fd
         );
-    }
-
-    if (m_stage == server_stages::SERVER_STAGE_READ_HEADERS) {
-        while (m_last_unparsed_line_start < m_tmp_answer_buffer.length()) {
-            size_t end_line_pos =
-                m_tmp_answer_buffer.find("\r\n", m_last_unparsed_line_start);
-            if (end_line_pos == std::string::npos) {
-                return false;
-            }
-
-            if (m_last_unparsed_line_start == end_line_pos) {
-                m_stage = server_stages::SERVER_STAGE_READ_TILL_END;
-                m_storage_item.second->put_data(m_tmp_answer_buffer);
-                m_content_offset =
-                    m_tmp_answer_buffer.length() - (end_line_pos + 2);
-                m_tmp_answer_buffer.clear();
-                return false;
-            }
-
-            std::string line = m_tmp_answer_buffer.substr(
-                m_last_unparsed_line_start,
-                end_line_pos - m_last_unparsed_line_start
-            );
-            size_t param_end_index = line.find(':');
-            if (param_end_index == std::string::npos) {
-                throw proxy_runtime_exception(
-                    "invalid parametr in HTTP header", 27
-                );
-            }
-
-            if (line.substr(0, param_end_index) == "Content-Length") {
-                m_content_len = std::stol(line.substr(param_end_index + 1));
-            }
-            m_last_unparsed_line_start = end_line_pos + 2;
+        if (!read_headers()) {
+            return false;
         }
     }
 
@@ -258,7 +216,6 @@ bool server_connection_t::check_connection() {
 }
 
 void server_connection_t::write_part() {
-
     ssize_t res = write(
         m_fd,
         m_request_to_send.c_str() + m_request_offset,
@@ -275,12 +232,48 @@ void server_connection_t::write_part() {
     if (res == -1) {
         if (errno == EAGAIN) {
             spdlog::trace("server_connection_t: EAGAIN recv");
-            return false;
+            return;
         }
         throw proxy_runtime_exception(strerror(errno), errno);
     }
 
     m_request_offset += res;
+}
+
+bool server_connection_t::read_headers() {
+    while (m_last_unparsed_line_start < m_tmp_answer_buffer.length()) {
+        size_t end_line_pos =
+            m_tmp_answer_buffer.find("\r\n", m_last_unparsed_line_start);
+        if (end_line_pos == std::string::npos) {
+            return false;
+        }
+
+        if (m_last_unparsed_line_start == end_line_pos) {
+            m_stage = server_stages::SERVER_STAGE_READ_TILL_END;
+            m_storage_item.second->put_data(m_tmp_answer_buffer);
+            m_content_offset =
+                m_tmp_answer_buffer.length() - (end_line_pos + 2);
+            m_tmp_answer_buffer.clear();
+            return false;
+        }
+
+        std::string line = m_tmp_answer_buffer.substr(
+            m_last_unparsed_line_start,
+            end_line_pos - m_last_unparsed_line_start
+        );
+        size_t param_end_index = line.find(':');
+        if (param_end_index == std::string::npos) {
+            throw proxy_runtime_exception(
+                "invalid parametr in HTTP header", 27
+            );
+        }
+
+        if (line.substr(0, param_end_index) == "Content-Length") {
+            m_content_len = std::stol(line.substr(param_end_index + 1));
+        }
+        m_last_unparsed_line_start = end_line_pos + 2;
+    }
+    return true;
 }
 
 bool server_connection_t::check_usage() {
