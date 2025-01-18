@@ -61,3 +61,5 @@ localhost:8082 - просто сайт
 localhost:8083 - redirect
 
 ## Схема
+
+![assets/description.png]
