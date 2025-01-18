@@ -1,0 +1,3 @@
+[submodule "tests/os-proxy-tests"]
+	path = tests/os-proxy-tests
+	url = https://github.com/borodun/os-proxy-tests.git
