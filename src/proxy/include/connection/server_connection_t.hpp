@@ -3,6 +3,7 @@
 #include <memory>
 #include <string>
 
+#include "const.hpp"
 #include "item.hpp"
 
 #include "connection/connection_t.hpp"

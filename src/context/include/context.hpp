@@ -4,7 +4,6 @@
 
 #include <sys/epoll.h>
 
-#include "const.hpp"
 
 /*!
  * \brief класс для работы с epoll

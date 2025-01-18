@@ -4,8 +4,8 @@
 
 #include <spdlog/spdlog.h>
 
+#include "const.hpp"
 #include "status_check.hpp"
-
 
 context_t::context_t() : m_ep_fd(epoll_create(MAX_EVENTS)) {
     m_events.resize(MAX_EVENTS);

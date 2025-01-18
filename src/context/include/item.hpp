@@ -21,6 +21,9 @@ class item_t {
 public:
     explicit item_t();
 
+    /*!
+     * \brief увеличить число подключенных клиентов на 1
+     */
     void pin();
 
     /*!
@@ -31,6 +34,7 @@ public:
     [[nodiscard]] int get_pin_count() const noexcept {
         return m_pin_count;
     }
+
     void put_data(const std::string &s) noexcept;
 
     /*!

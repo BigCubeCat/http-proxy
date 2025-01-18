@@ -29,13 +29,13 @@ hello world!
 
 ## Тестирование
 
-для некоторых тестов необходим docker compose
+для некоторых тестов необходим docker compose (см локальное тестирование)[#Локальное тестирование]
 
 - [x] basic
 - [x] sequential
-- [ ] concurrent-batches
+- [x] concurrent-batches
 - [x] cache-invalidation
-- [ ] parallel-clients
+- [x] parallel-clients
 - [x] incremental-interrupt
 
 0. (Собирите)[#Сборка] проект в директорию `build`
@@ -46,11 +46,18 @@ hello world!
 ctest --output-on-failure --test-dir ./build
 ```
 
-## TODO
+## Локальное тестирование
 
-- [x] Функционал кэша
-- [x] Инвалидация кэша
-- [x] Обычные HTML страницы
-- [x] Файлы
-- [x] redirect
-- [ ] оптимизация
+Для тестов **basic** и **parallel-clients** необходимо запустить docker контейнеры с сайтами, на которые тесты делают запросы
+
+```bash
+cd tests/web
+docker compose up -d
+```
+
+**Запустятся сайты**
+localhost:8081 - отправляет архив
+localhost:8082 - просто сайт
+localhost:8083 - redirect
+
+## Схема

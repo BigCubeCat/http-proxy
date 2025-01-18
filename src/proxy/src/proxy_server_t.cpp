@@ -56,7 +56,6 @@ void proxy_server_t::start_server_loop() {
                 if (event & EPOLLOUT) {
                     spdlog::trace("EPOLLOUT");
                     if (connection->process_output(this)) {
-                        spdlog::warn("process process_output");
                         erase_connection(fd);
                         continue;
                     }
