@@ -99,17 +99,17 @@ bool client_connection_t::process_output(
     if (res == -1) {
         return true;
     }
-
     if (res == 0) {    // we wait untill data arive in storage_item
         return false;
     }
-
     ssize_t send_res = write(m_fd, buffer.c_str(), buffer.length());
     if (send_res == -1) {
         if (errno == EAGAIN) {
             return false;
         }
-        spdlog::error("client_connection_t: invalid write {}", m_fd);
+        spdlog::error(
+            "client_connection_t: invalid write {}: {}", m_fd, strerror(errno)
+        );
         throw std::runtime_error(strerror(errno));
     }
     if (send_res == 0) {
