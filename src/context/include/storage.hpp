@@ -1,7 +1,6 @@
 #pragma once
 
 #include <memory>
-#include <shared_mutex>
 
 #include "cache.hpp"
 
@@ -12,8 +11,6 @@ class storage : public cache_t {
 private:
     storage()  = default;
     ~storage() = default;
-
-    std::shared_mutex m_mutex;
 
     bool m_cache_valid = false;
 

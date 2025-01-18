@@ -24,6 +24,7 @@ void sigint_handler(int status) {
     proxy_inst->stop(status);
     std::cout << "terminating\n";
     storage::instance().free();
+    spdlog::info("storage freed");
     sleep(TERMINATING_DELAY);
 }
 
